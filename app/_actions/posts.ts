@@ -129,6 +129,7 @@ export async function updatePost(id: string, input: PostInput) {
     .single();
   if (readErr) throw new Error(readErr.message);
 
+  console.log(input.content)
   const { data, error } = await supabase
     .from("posts")
     .update({

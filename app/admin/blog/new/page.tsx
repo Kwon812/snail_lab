@@ -5,6 +5,7 @@ import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
 import LinkExt from "@tiptap/extension-link";
 import ImageExt from "@tiptap/extension-image";
+import FileHandler from "@tiptap/extension-file-handler";
 import {Suspense, useEffect, useMemo, useState} from "react";
 import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
 import {useRouter, useSearchParams} from "next/navigation";
@@ -70,6 +71,28 @@ function WriteEditor() {
             Placeholder.configure({placeholder: "여기에 본문을 작성하세요…"}),
             LinkExt.configure({openOnClick: false, HTMLAttributes: {rel: "noopener"}}),
             ImageExt.configure({inline: false}),
+            // 공식 확장: 붙여넣기/드래그한 이미지 파일 → Supabase 업로드 후 src와 함께 삽입
+            FileHandler.configure({
+                allowedMimeTypes: ["image/png", "image/jpeg", "image/gif", "image/webp", "image/svg+xml"],
+                onPaste: (currentEditor, files) => {
+                    files.forEach(async (file) => {
+                        const url = await uploadImage(file);
+                        console.log(url)
+                        if (url) currentEditor.chain().focus().setImage({src: url, alt: file.name}).run();
+                    });
+                },
+                onDrop: (currentEditor, files, pos) => {
+                    files.forEach(async (file) => {
+                        const url = await uploadImage(file);
+                        if (url) {
+                            currentEditor.chain().insertContentAt(pos, {
+                                type: "image",
+                                attrs: {src: url, alt: file.name},
+                            }).focus().run();
+                        }
+                    });
+                },
+            }),
         ],
         editorProps: {
             attributes: {class: "rich min-h-[420px]"},
@@ -128,7 +151,9 @@ function WriteEditor() {
                 tags,
                 thumbnail,
                 status: next,
-                content: editor?.getJSON() ?? {}, // Tiptap JSON — the recommended storage format
+                // Tiptap JSON — round-trip to a plain object so it survives the Server Action
+                // boundary (getJSON()'s attrs otherwise deserialize as functions on the server).
+                content: JSON.parse(JSON.stringify(editor?.getJSON() ?? {})),
             };
             return isEdit ? updatePost(editId!, payload) : createPost(payload);
         },
@@ -405,7 +430,11 @@ function Toolbar({editor}: { editor: Editor | null }) {
         setUploading(true);
         try {
             const url = await uploadImage(file);
-            editor.chain().focus().setImage({src: url}).run();
+            if (!url) {
+                alert("이미지 URL을 받지 못했습니다. 다시 시도해 주세요.");
+                return;
+            }
+            editor.chain().focus().setImage({src: url, alt: file.name}).run();
         } catch (err) {
             alert(`이미지 업로드 실패: ${(err as Error).message}`);
         } finally {

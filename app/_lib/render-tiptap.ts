@@ -25,13 +25,33 @@ function toDoc(content: unknown): Record<string, unknown> | null {
   return null;
 }
 
+/** Drop image nodes that have no src (legacy empty inserts) so they don't
+ *  render as broken/empty <img>. Mutates a shallow-cloned tree. */
+function stripEmptyImages(node: unknown): unknown {
+  if (!node || typeof node !== "object") return node;
+  const n = node as { type?: string; attrs?: { src?: unknown }; content?: unknown[] };
+  if (Array.isArray(n.content)) {
+    n.content = n.content
+      .filter((c) => !(isImage(c) && !hasSrc(c)))
+      .map(stripEmptyImages);
+  }
+  return n;
+}
+function isImage(c: unknown): boolean {
+  return !!c && typeof c === "object" && (c as { type?: string }).type === "image";
+}
+function hasSrc(c: unknown): boolean {
+  const src = (c as { attrs?: { src?: unknown } }).attrs?.src;
+  return typeof src === "string" && src.length > 0;
+}
+
 /** Tiptap JSON document → sanitized HTML string for public rendering. */
 export function renderTiptap(content: unknown): string {
   const doc = toDoc(content);
   if (!doc) return "";
   let html = "";
   try {
-    html = generateHTML(doc, extensions);
+    html = generateHTML(stripEmptyImages(structuredClone(doc)) as Record<string, unknown>, extensions);
   } catch {
     return "";
   }
