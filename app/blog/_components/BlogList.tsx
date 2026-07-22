@@ -62,30 +62,39 @@ export function BlogList({ posts }: { posts: PublicPostCard[] }) {
         </p>
       ) : (
         <>
-          <Reveal stagger className="mt-12 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <Reveal stagger className="mt-12 grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-5">
             {visible.map((p) => (
               <div key={p.slug} className="group relative">
                 <Link
                   href={`/blog/${p.slug}`}
-                  className="flex h-full flex-col overflow-hidden rounded-[28px] bg-lifted shadow-card transition-transform hover:-translate-y-1"
+                  className="flex items-center gap-5 rounded-[24px] bg-lifted p-4 shadow-card transition-transform hover:-translate-y-0.5 sm:p-5"
                 >
                   {p.thumbnail ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={p.thumbnail} alt={p.title} className="aspect-[16/10] w-full object-cover" />
+                    <img
+                      src={p.thumbnail}
+                      alt={p.title}
+                      className="h-24 w-24 shrink-0 rounded-[16px] object-cover sm:h-28 sm:w-28"
+                    />
                   ) : (
                     <div
-                      className="aspect-[16/10] w-full"
+                      className="h-24 w-24 shrink-0 rounded-[16px] sm:h-28 sm:w-28"
                       style={{
                         background: `radial-gradient(circle at 35% 30%, ${p.tone.a}, ${p.tone.b})`,
                       }}
                     />
                   )}
-                  <div className="flex flex-1 flex-col p-6">
+                  <div className="flex min-w-0 flex-1 flex-col">
                     <span className="text-[13px] font-medium text-signal">{p.category}</span>
-                    <h3 className="mt-4 flex-1 text-[19px] font-medium leading-[1.35] tracking-[-0.01em]">
+                    <h3 className="mt-1.5 line-clamp-2 text-[18px] font-medium leading-[1.35] tracking-[-0.01em] text-ink">
                       {p.title}
                     </h3>
-                    <span className="mt-5 text-[13px] text-slate">{p.date}</span>
+                    {p.excerpt && (
+                      <p className="mt-1.5 line-clamp-1 text-[14px] leading-[1.5] text-slate">
+                        {p.excerpt}
+                      </p>
+                    )}
+                    <span className="mt-2 text-[13px] text-slate/80">{p.date}</span>
                   </div>
                 </Link>
                 <PostAdminActions id={p.id} className="absolute right-3 top-3" />
