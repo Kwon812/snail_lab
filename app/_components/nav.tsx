@@ -40,26 +40,26 @@ export function Nav() {
           </span>
         </Link>
 
-        {/* Desktop links */}
-        <div className="hidden items-center gap-9 lg:flex">
-          {LINKS.map((l) => {
-            const active = pathname === l.href || pathname.startsWith(l.href + "/");
-            return (
-              <Link
-                key={l.href}
-                href={l.href}
-                className={`text-[16px] font-medium tracking-[-0.02em] transition-colors ${
-                  active ? "text-ink" : "text-ink/55 hover:text-ink"
-                }`}
-              >
-                {l.label}
-              </Link>
-            );
-          })}
-        </div>
+        {/* Right — links + CTA + mobile toggle */}
+        <div className="flex items-center gap-2 lg:gap-8">
+          {/* Desktop links */}
+          <div className="hidden items-center gap-8 lg:flex">
+            {LINKS.map((l) => {
+              const active = pathname === l.href || pathname.startsWith(l.href + "/");
+              return (
+                <Link
+                  key={l.href}
+                  href={l.href}
+                  className={`text-[16px] font-medium tracking-[-0.02em] transition-colors ${
+                    active ? "text-ink" : "text-ink/55 hover:text-ink"
+                  }`}
+                >
+                  {l.label}
+                </Link>
+              );
+            })}
+          </div>
 
-        {/* Right — CTA + mobile toggle */}
-        <div className="flex items-center gap-2">
           <Link
             href="/contact"
             className="hidden items-center gap-2 rounded-[20px] bg-ink px-5 py-2 text-[15px] font-medium tracking-[-0.02em] text-cream transition-transform active:scale-95 lg:inline-flex"
