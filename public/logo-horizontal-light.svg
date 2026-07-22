@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="540" height="120" viewBox="0 0 540 120">
+  <g transform="translate(0,14)">
+    <path d="M 81 42 A 26 26 0 1 1 29 42 A 19.5 19.5 0 1 1 68 42 A 13 13 0 1 1 42 42 A 6.5 6.5 0 1 1 55 42" fill="none" stroke="#CF4500" stroke-width="3" stroke-linecap="round"/>
+    <rect x="10" y="68" width="120" height="24" rx="12" fill="#141413"/>
+    <line x1="112" y1="67" x2="117" y2="46" stroke="#141413" stroke-width="3" stroke-linecap="round"/>
+    <circle cx="118" cy="42" r="4" fill="#CF4500"/>
+    <line x1="124" y1="67" x2="134" y2="50" stroke="#141413" stroke-width="3" stroke-linecap="round"/>
+    <circle cx="136" cy="46" r="4" fill="#CF4500"/>
+  </g>
+  <text x="168" y="66" font-family="'Pretendard','Noto Sans KR','Apple SD Gothic Neo',sans-serif" font-size="30" font-weight="500" letter-spacing="-0.6" fill="#141413">달팽이 그림책 연구소</text>
+  <circle cx="172" cy="88" r="3" fill="#CF4500"/>
+  <text x="184" y="93" font-family="'Pretendard','Noto Sans KR','Apple SD Gothic Neo',sans-serif" font-size="12" font-weight="700" letter-spacing="2.2" fill="#696969">PICTURE BOOK LAB</text>
+</svg>
