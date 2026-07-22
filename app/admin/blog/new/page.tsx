@@ -151,6 +151,7 @@ function WriteEditor() {
     const qc = useQueryClient();
     const [pendingKind, setPendingKind] = useState<"DRAFT" | "PUBLISHED" | null>(null);
     const [lit, setLit] = useState(false); // brief glow on the status pill after a save
+    const [navigating, setNavigating] = useState(false); // 발행 후 페이지 이동 대기 (버튼 계속 잠금)
 
     const save = useMutation({
         mutationFn: (next: "DRAFT" | "PUBLISHED") => {
@@ -182,6 +183,8 @@ function WriteEditor() {
 
             if (next === "PUBLISHED") {
                 // 발행하면 공개 글로 이동. replace로 편집 화면을 히스토리에서 치워 뒤로가기 방지.
+                // navigating 유지로 이동 완료(언마운트)까지 버튼을 계속 잠금 → 재활성 깜빡임 방지.
+                setNavigating(true);
                 router.replace(data?.slug ? `/blog/${data.slug}` : "/blog");
             } else {
                 setTimeout(() => setSaved(null), 2200);
@@ -214,17 +217,17 @@ function WriteEditor() {
                         </button>
                         <button
                             onClick={() => save.mutate("DRAFT")}
-                            disabled={saving}
+                            disabled={saving || navigating}
                             className="inline-flex min-w-[92px] items-center justify-center rounded-[20px] border-[1.5px] border-ink bg-white px-5 py-2 text-[15px] font-medium tracking-[-0.02em] transition-transform active:scale-95 disabled:opacity-60"
                         >
                             {pendingKind === "DRAFT" ? <Spinner size={20}/> : "임시저장"}
                         </button>
                         <button
                             onClick={() => save.mutate("PUBLISHED")}
-                            disabled={saving}
+                            disabled={saving || navigating}
                             className="inline-flex min-w-[92px] items-center justify-center gap-2 rounded-[20px] border-[1.5px] border-ink bg-ink px-5 py-2 text-[15px] font-medium tracking-[-0.02em] text-cream transition-transform active:scale-95 disabled:opacity-60"
                         >
-                            {pendingKind === "PUBLISHED" ? <Spinner size={20}/> : <>{isEdit ? "수정 발행" : "발행"} <Arrow className="h-4 w-4"/></>}
+                            {pendingKind === "PUBLISHED" || navigating ? <Spinner size={20}/> : <>{isEdit ? "수정 발행" : "발행"} <Arrow className="h-4 w-4"/></>}
                         </button>
                     </div>
                 </div>

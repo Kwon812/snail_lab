@@ -20,14 +20,14 @@ export default function ContactPage() {
       <Reveal stagger className="grid grid-cols-1 gap-14 lg:grid-cols-[1fr_1.1fr]">
         {/* Left — intro + channels */}
         <div>
-          <Eyebrow>문의</Eyebrow>
+          <Eyebrow>강의문의</Eyebrow>
           <h1 className="display mt-6 text-[40px] leading-[1.02] sm:text-[56px]">
             어떤 이야기든
             <br />
             환영합니다.
           </h1>
           <p className="mt-6 max-w-[44ch] text-[18px] leading-[1.55] text-slate">
-            수강 문의부터 기업 출강, 협업 제안까지. 폼을 남겨주시면 영업일 기준 1~2일 내에
+            강의 문의부터 기업 출강, 협업 제안까지. 폼을 남겨주시면 영업일 기준 1~2일 내에
             답변드립니다.
           </p>
 
