@@ -27,7 +27,14 @@ export default function AboutPage() {
             </p>
           </div>
           <div className="flex justify-center lg:justify-end">
-            <Portrait toneA="#f2933f" toneB="#cf4500" size={320} satellite={false} />
+            <Portrait toneA="#f2933f" toneB="#cf4500" size={320} satellite={false}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/profile.png"
+                alt="최미선 강사"
+                className="absolute inset-0 h-full w-full object-cover"
+              />
+            </Portrait>
           </div>
         </Reveal>
       </Section>

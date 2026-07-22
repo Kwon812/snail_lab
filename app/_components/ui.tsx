@@ -98,7 +98,7 @@ export function Portrait({
     <>
       {/* The circle — floats on hover when `lift` is set */}
       <div
-        className={`portrait shrink-0 ${liftClasses} ${className}`}
+        className={`portrait relative shrink-0 overflow-hidden ${liftClasses} ${className}`}
         style={
           {
             width: size,

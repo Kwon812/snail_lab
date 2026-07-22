@@ -46,9 +46,39 @@ export default async function Home() {
                     {/* Right — signature circular portrait, orbit & ghost watermark */}
                     <div className="relative flex justify-center lg:justify-end">
                         <div className="relative">
+                            {/* ghost watermark behind the portrait */}
+                            <span
+                                aria-hidden
+                                className="display pointer-events-none absolute -top-10 left-1/2 -z-10 hidden -translate-x-1/2 select-none whitespace-nowrap text-[140px] leading-none text-ghost lg:block"
+                            >
+                                그림책
+                            </span>
                             <Orbit className="-left-24 top-8 hidden h-[240px] w-[460px] lg:block"/>
-                            {/* 사진은 Portrait 안에 <img className="absolute inset-0 h-full w-full rounded-full object-cover" /> 로 넣으면 됨 */}
-                            <Portrait href="/about" toneA="#f2933f" toneB="#cf4500" size={360} lift/>
+
+                            {/* portrait + floating info pills */}
+                            <div className="relative w-fit">
+                                <Portrait href="/about" toneA="#f2933f" toneB="#cf4500" size={360} lift>
+                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                    <img
+                                        src="/profile.png"
+                                        alt="최미선 강사"
+                                        className="absolute inset-0 h-full w-full object-cover"
+                                    />
+                                    {/* edge fade — dissolves the photo into the cream canvas */}
+                                    <span
+                                        aria-hidden
+                                        className="pointer-events-none absolute inset-0 rounded-full"
+                                        style={{ boxShadow: "inset 0 0 55px 18px var(--color-cream)" }}
+                                    />
+                                </Portrait>
+
+                            </div>
+
+                            {/* name + role caption */}
+                            <div className="mt-6 text-center">
+                                <p className="display text-[20px] text-ink">최미선</p>
+                                <p className="mt-1 text-[13px] text-slate">달팽이 그림책연구소 대표</p>
+                            </div>
                         </div>
                     </div>
                 </Reveal>
@@ -81,8 +111,24 @@ export default async function Home() {
                                 i % 2 === 1 ? "lg:mt-16" : ""
                             }`}
                         >
-                            <Portrait href={`/lectures?field=${f.slug}`} toneA={f.tone.a} toneB={f.tone.b} size={230}
-                                      lift/>
+                            <Portrait className={'bg-orange-500'} href={`/lectures?field=${f.slug}`} toneA={f.tone.a} toneB={f.tone.b} size={230}
+                                      lift>
+                                {/* 흰줄 벡터 아이콘 — 원 위에 겹치게 */}
+                                {/*<span*/}
+                                {/*    aria-hidden*/}
+                                {/*    className="pointer-events-none absolute inset-0 bg-white"*/}
+                                {/*    style={{*/}
+                                {/*        WebkitMaskImage: `url(/icon-0${i + 1}-${f.slug}.svg)`,*/}
+                                {/*        maskImage: `url(/icon-0${i + 1}-${f.slug}.svg)`,*/}
+                                {/*        WebkitMaskRepeat: "no-repeat",*/}
+                                {/*        maskRepeat: "no-repeat",*/}
+                                {/*        WebkitMaskPosition: "center",*/}
+                                {/*        maskPosition: "center",*/}
+                                {/*        WebkitMaskSize: "52%",*/}
+                                {/*        maskSize: "52%",*/}
+                                {/*    }}*/}
+                                {/*/>*/}
+                            </Portrait>
                             <div className="mt-10">
                 <span className="display text-[15px] tabular-nums text-signal-light">
                   {`0${i + 1}`}
