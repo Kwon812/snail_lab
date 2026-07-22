@@ -174,4 +174,4 @@ export const posts = [
   },
 ];
 
-export const categories = ["전체", "미디어 리터러시", "그림책", "아동심리", "강의 소식"];
+export const categories = ["전체", "강의 소식", "강의 일지"];
