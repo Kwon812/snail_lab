@@ -20,6 +20,16 @@ const CATS = categories.filter((c) => c !== "전체");
 const TONE = {a: "#f2933f", b: "#cf4500"};
 const TODAY = "2026.07.22";
 
+// 강의 폼과 동일한 필드 스타일
+const INPUT_CLS =
+    "mt-3 w-full rounded-[14px] border border-ink/15 bg-white px-4 py-3 text-[16px] text-ink outline-none transition-colors placeholder:text-dust focus:border-ink/40";
+
+function FieldLabel({children}: {children: React.ReactNode}) {
+    return (
+        <span className="text-[13px] font-bold uppercase tracking-[0.04em] text-slate">{children}</span>
+    );
+}
+
 export default function WritePage() {
     return (
         <Suspense fallback={<div className="flex justify-center pt-48"><Spinner size={52}/></div>}>
@@ -234,84 +244,88 @@ function WriteEditor() {
                     <div className="mx-auto grid max-w-[980px] grid-cols-1 gap-12 lg:grid-cols-[1fr_200px]">
                         {/* Left — the composer */}
                         <div className="min-w-0">
-                            {/* Category */}
-                            <div className="flex flex-wrap gap-2">
-                                {CATS.map((c) => (
-                                    <button key={c} onClick={() => setCat(c)}>
-                    <span
-                        className={`inline-flex items-center rounded-pill px-5 py-2 text-[14px] font-medium transition-colors ${
-                            cat === c
-                                ? "bg-ink text-cream"
-                                : "bg-white text-ink border border-ink/15 hover:border-ink/40"
-                        }`}
-                    >
-                      {c}
-                    </span>
-                                    </button>
-                                ))}
+                            {/* 카테고리 */}
+                            <div>
+                                <FieldLabel>카테고리</FieldLabel>
+                                <div className="mt-3 flex flex-wrap gap-2">
+                                    {CATS.map((c) => (
+                                        <button
+                                            key={c}
+                                            type="button"
+                                            onClick={() => setCat(c)}
+                                            className={`rounded-pill px-5 py-2 text-[14px] font-medium transition-colors ${
+                                                cat === c
+                                                    ? "bg-ink text-cream"
+                                                    : "bg-white text-ink border border-ink/15 hover:border-ink/40"
+                                            }`}
+                                        >
+                                            {c}
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
 
-                            {/* Title */}
-                            <textarea
-                                value={title}
-                                onChange={(e) => setTitle(e.target.value)}
-                                rows={1}
-                                placeholder="제목을 입력하세요"
-                                className="display mt-6 w-full resize-none bg-transparent text-[34px] leading-[1.1] text-ink outline-none placeholder:text-dust sm:text-[48px]"
-                            />
-
-                            {/* Excerpt */}
-                            <input
-                                value={excerpt}
-                                onChange={(e) => setExcerpt(e.target.value)}
-                                placeholder="요약을 입력하세요 (목록·검색·SEO용)"
-                                className="mt-4 w-full border-b border-ink/15 bg-transparent pb-3 text-[18px] leading-[1.5] text-slate outline-none placeholder:text-dust focus:border-ink/40"
-                            />
-
-                            {/* Tags */}
-                            <div
-                                className="mt-4 flex flex-wrap items-center gap-2 border-b border-ink/15 pb-3 focus-within:border-ink/40">
-                                {tags.map((t) => (
-                                    <button
-                                        type="button"
-                                        onClick={() => removeTag(t)}
-                                        aria-label={`${t} 태그 삭제`}
-                                        key={t}
-                                        className=" group inline-flex items-center gap-1.5 rounded-pill bg-white px-3 py-1.5 text-[13px] text-ink ring-1 ring-ink/10"
-                                    >
-                                        #{t}
-                                        <p
-                                            className="text-slate  transition-colors group-hover:text-signal"
-                                        >
-                                            ×
-                                        </p>
-                                    </button>
-                                ))}
+                            {/* 제목 */}
+                            <div className="mt-6">
+                                <FieldLabel>제목</FieldLabel>
                                 <input
-                                    value={tagInput}
-                                    onChange={(e) => setTagInput(e.target.value)}
-                                    onKeyDown={onTagKeyDown}
-                                    onBlur={() => addTag(tagInput)}
-                                    placeholder={tags.length ? "태그 추가" : "태그를 입력하고 Enter (예: 그림책)"}
-                                    className="min-w-[140px] flex-1 bg-transparent py-1 text-[15px] text-ink outline-none placeholder:text-dust"
+                                    value={title}
+                                    onChange={(e) => setTitle(e.target.value)}
+                                    placeholder="제목을 입력하세요"
+                                    className={INPUT_CLS}
                                 />
                             </div>
 
-                            {/* Thumbnail (cover) */}
+                            {/* 요약 */}
+                            <div className="mt-6">
+                                <FieldLabel>요약 (선택)</FieldLabel>
+                                <input
+                                    value={excerpt}
+                                    onChange={(e) => setExcerpt(e.target.value)}
+                                    placeholder="목록·검색·SEO에 쓰이는 한 줄 요약"
+                                    className={INPUT_CLS}
+                                />
+                            </div>
+
+                            {/* 태그 */}
+                            <div className="mt-6">
+                                <FieldLabel>태그</FieldLabel>
+                                <div className="mt-3 flex flex-wrap items-center gap-2 rounded-[14px] border border-ink/15 bg-white px-3 py-2 transition-colors focus-within:border-ink/40">
+                                    {tags.map((t) => (
+                                        <button
+                                            type="button"
+                                            onClick={() => removeTag(t)}
+                                            aria-label={`${t} 태그 삭제`}
+                                            key={t}
+                                            className="group inline-flex items-center gap-1.5 rounded-pill bg-lifted px-3 py-1 text-[13px] text-ink ring-1 ring-ink/10"
+                                        >
+                                            #{t}
+                                            <span className="text-slate transition-colors group-hover:text-signal">×</span>
+                                        </button>
+                                    ))}
+                                    <input
+                                        value={tagInput}
+                                        onChange={(e) => setTagInput(e.target.value)}
+                                        onKeyDown={onTagKeyDown}
+                                        onBlur={() => addTag(tagInput)}
+                                        placeholder={tags.length ? "태그 추가" : "태그 입력 후 Enter (예: 그림책)"}
+                                        className="min-w-[140px] flex-1 bg-transparent px-1 py-1.5 text-[15px] text-ink outline-none placeholder:text-dust"
+                                    />
+                                </div>
+                            </div>
+
+                            {/* 대표 이미지 */}
                             <div className="mt-6">
                                 <ThumbnailField value={thumbnail} onChange={setThumbnail}/>
                             </div>
 
-                            <div className="mt-6 text-[14px] text-slate">
-                                <span>{TODAY}</span>
-                            </div>
-
-                            {/* Toolbar */}
-                            <Toolbar editor={editor}/>
-
-                            {/* Editor surface */}
-                            <div className="mt-4 rounded-[24px] bg-lifted p-6 shadow-card sm:p-8">
-                                <EditorContent editor={editor}/>
+                            {/* 본문 */}
+                            <div className="mt-6">
+                                <FieldLabel>본문</FieldLabel>
+                                <Toolbar editor={editor}/>
+                                <div className="mt-4 rounded-[14px] border border-ink/15 bg-white p-6 sm:p-8">
+                                    <EditorContent editor={editor}/>
+                                </div>
                             </div>
                         </div>
 

@@ -111,7 +111,7 @@ export default async function Home() {
                                 i % 2 === 1 ? "lg:mt-16" : ""
                             }`}
                         >
-                            <Portrait className={'bg-orange-500'} href={`/lectures?field=${f.slug}`} toneA={f.tone.a} toneB={f.tone.b} size={230}
+                            <Portrait className={'bg-orange-500'} href={`/lectures?field=${encodeURIComponent(f.title)}`} toneA={f.tone.a} toneB={f.tone.b} size={230}
                                       lift>
                                 {/* 흰줄 벡터 아이콘 — 원 위에 겹치게 */}
                                 {/*<span*/}

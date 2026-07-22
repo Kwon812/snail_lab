@@ -6,11 +6,17 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Arrow, Eyebrow, Section } from "../../../_components/ui";
 import { Spinner } from "../../../_components/spinner";
-import { createLecture, getLecture, updateLecture } from "../../../_actions/lectures";
+import { createLecture, getLectures, getLecture, updateLecture } from "../../../_actions/lectures";
+import { extractLecturePlan } from "../../../_actions/lecture-ai";
 import { ThumbnailField } from "../../_components/ThumbnailField";
 import { fields } from "../../../_data/content";
+import { toneFor } from "../../../_lib/format";
 
 const MODES = ["온라인", "오프라인", "온라인 · 오프라인"];
+
+// 폼 입력 공용 스타일 (모든 텍스트 입력/텍스트영역 통일)
+const INPUT_CLS =
+  "mt-3 w-full rounded-[14px] border border-ink/15 bg-white px-4 py-3 text-[16px] text-ink outline-none transition-colors placeholder:text-dust focus:border-ink/40";
 
 export default function LectureWritePage() {
   return (
@@ -26,7 +32,7 @@ function LectureEditor() {
   const editId = searchParams.get("id");
   const isEdit = !!editId;
 
-  const [fieldSlug, setFieldSlug] = useState<string>(fields[0].slug);
+  const [field, setField] = useState(""); // 자유 입력 분야명
   const [title, setTitle] = useState("");
   const [level, setLevel] = useState("");
   const [mode, setMode] = useState(MODES[1]);
@@ -38,8 +44,43 @@ function LectureEditor() {
   const [preview, setPreview] = useState(false);
   const [saved, setSaved] = useState<string | null>(null);
 
-  const field = fields.find((f) => f.slug === fieldSlug)!;
-  const tone = field.tone;
+  // 분야명으로부터 색 톤을 결정 (미리보기/저장용)
+  const tone = toneFor(field || "lecture");
+
+  // 등록된 강의들의 분야에서 datalist 제안 파생 (없으면 기본 제안)
+  const { data: allLectures } = useQuery({ queryKey: ["lectures"], queryFn: () => getLectures() });
+  const fieldSuggestions = Array.from(
+    new Set([
+      ...(allLectures?.map((l) => l.field).filter(Boolean) ?? []),
+    ]),
+  );
+
+  // 강의계획서 PDF → AI 분석 → 폼 자동 채우기
+  const [analyzing, setAnalyzing] = useState(false);
+  async function onPickPdf(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setAnalyzing(true);
+    try {
+      const fd = new FormData();
+      fd.set("pdf", file);
+      const plan = await extractLecturePlan(fd);
+      if (plan.field) setField(plan.field);
+      if (plan.title) setTitle(plan.title);
+      if (plan.level) setLevel(plan.level);
+      if (plan.mode) setMode(plan.mode);
+      if (plan.target) setTarget(plan.target);
+      if (plan.intro) setIntro(plan.intro);
+      if (plan.curriculum?.length) setCurriculum(plan.curriculum);
+      setSaved("강의계획서를 분석해 폼을 채웠어요. 검토 후 발행하세요.");
+      setTimeout(() => setSaved(null), 3000);
+    } catch (err) {
+      alert(`분석 실패: ${(err as Error).message}`);
+    } finally {
+      setAnalyzing(false);
+    }
+  }
 
   function updateItem(i: number, v: string) {
     setCurriculum((prev) => prev.map((c, idx) => (idx === i ? v : c)));
@@ -60,7 +101,7 @@ function LectureEditor() {
   const [hydrated, setHydrated] = useState(false);
   useEffect(() => {
     if (!existing || hydrated) return;
-    setFieldSlug(existing.field);
+    setField(existing.field);
     setTitle(existing.title);
     setLevel(existing.level ?? "");
     setMode(existing.mode ?? MODES[1]);
@@ -79,7 +120,7 @@ function LectureEditor() {
   const save = useMutation({
     mutationFn: (next: "DRAFT" | "PUBLISHED") => {
       const payload = {
-        field: fieldSlug,
+        field: field.trim(),
         title,
         level,
         mode,
@@ -164,37 +205,61 @@ function LectureEditor() {
         />
       ) : (
         <Section className="mt-8">
-          <div className="mx-auto max-w-[860px]">
-            {/* 분야 */}
-            <FieldLabel>분야</FieldLabel>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {fields.map((f) => (
-                <Pill key={f.slug} active={fieldSlug === f.slug} onClick={() => setFieldSlug(f.slug)}>
-                  {f.title}
-                </Pill>
-              ))}
+          <div className="mx-auto max-w-[860px] flex flex-col">
+            {/* 강의계획서 PDF 자동 채우기 */}
+            <label className="mb-8 flex cursor-pointer items-center justify-between gap-4 rounded-[20px] border border-dashed border-signal/40 bg-signal/5 px-6 py-4 transition-colors hover:border-signal">
+              <span className="flex items-center gap-3">
+                <span className="text-[22px]">📄</span>
+                <span>
+                  <span className="block text-[15px] font-medium text-ink">강의계획서 PDF로 자동 채우기</span>
+                  <span className="block text-[13px] text-slate">
+                    PDF를 올리면 분야·제목·대상·커리큘럼을 분석해 아래 폼을 채워요.
+                  </span>
+                </span>
+              </span>
+              {analyzing ? (
+                <Spinner size={24} />
+              ) : (
+                <span className="shrink-0 rounded-pill bg-ink px-4 py-2 text-[13px] font-medium text-cream">
+                  PDF 선택
+                </span>
+              )}
+              <input
+                type="file"
+                accept="application/pdf"
+                onChange={onPickPdf}
+                disabled={analyzing}
+                className="hidden"
+              />
+            </label>
+
+            {/* 제목 */}
+            <div>
+              <FieldLabel>제목</FieldLabel>
+              <input
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="강의 제목을 입력하세요"
+                className={INPUT_CLS}
+              />
             </div>
 
-            {/* Title */}
-            <input
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="강의 제목을 입력하세요"
-              className="display mt-8 w-full resize-none bg-transparent text-[34px] leading-[1.1] text-ink outline-none placeholder:text-dust sm:text-[44px]"
-            />
-
-            {/* Level / Mode */}
-            <div className="mt-8 flex flex-col gap-8 sm:grid-cols-2">
+            {/* 분야 · 진행 방식 */}
+            <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2">
               <div>
-                <FieldLabel>대상</FieldLabel>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <input
-                      value={level}
-                      onChange={(e) => setLevel(e.target.value)}
-                      placeholder="초중고 학생들 "
-                      className="mt-3 w-full rounded-[16px] border border-ink/15 bg-white px-4 py-3 text-[16px] text-ink outline-none placeholder:text-dust focus:border-ink/40"
-                  />
-                </div>
+                <FieldLabel>분야</FieldLabel>
+                <input
+                  value={field}
+                  onChange={(e) => setField(e.target.value)}
+                  list="lecture-field-suggestions"
+                  placeholder="예: 미디어 리터러시 (직접 입력 가능)"
+                  className={INPUT_CLS}
+                />
+                <datalist id="lecture-field-suggestions">
+                  {fieldSuggestions.map((s) => (
+                    <option key={s} value={s} />
+                  ))}
+                </datalist>
               </div>
               <div>
                 <FieldLabel>진행 방식</FieldLabel>
@@ -208,42 +273,42 @@ function LectureEditor() {
               </div>
             </div>
 
-            {/* Target */}
-            <div className="mt-8">
-              <FieldLabel>대상 설명</FieldLabel>
-              <input
-                value={target}
-                onChange={(e) => setTarget(e.target.value)}
-                placeholder="예: 아이의 미디어 사용이 걱정되는 부모와 교사"
-                className="mt-3 w-full rounded-[16px] border border-ink/15 bg-white px-4 py-3 text-[16px] text-ink outline-none placeholder:text-dust focus:border-ink/40"
-              />
+            {/* 수준 · 대상 */}
+            <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2">
+              <div>
+                <FieldLabel>수준</FieldLabel>
+                <input
+                  value={level}
+                  onChange={(e) => setLevel(e.target.value)}
+                  placeholder="예: 학부모·교사, 초등학생"
+                  className={INPUT_CLS}
+                />
+              </div>
+              <div>
+                <FieldLabel>대상</FieldLabel>
+                <input
+                  value={target}
+                  onChange={(e) => setTarget(e.target.value)}
+                  placeholder="예: 아이의 미디어 사용이 걱정되는 부모"
+                  className={INPUT_CLS}
+                />
+              </div>
             </div>
 
-            {/* Intro */}
-            <div className="mt-8">
+            {/* 강의 소개 */}
+            <div className="mt-6">
               <FieldLabel>강의 소개 (선택)</FieldLabel>
               <textarea
                 value={intro}
                 onChange={(e) => setIntro(e.target.value)}
                 rows={3}
                 placeholder="강의를 한두 문단으로 소개해 주세요."
-                className="mt-3 w-full resize-none rounded-[16px] border border-ink/15 bg-white px-4 py-3 text-[16px] leading-[1.6] text-ink outline-none placeholder:text-dust focus:border-ink/40"
-              />
-            </div>
-
-            {/* Thumbnail */}
-            <div className="mt-8">
-              <ThumbnailField
-                value={thumbnail}
-                onChange={setThumbnail}
-                label="대표 이미지 (선택)"
-                aspect="aspect-[4/3]"
-                className="max-w-[360px]"
+                className={`${INPUT_CLS} resize-none leading-[1.6]`}
               />
             </div>
 
             {/* Curriculum */}
-            <div className="mt-8">
+            <div className="mt-6">
               <FieldLabel>커리큘럼</FieldLabel>
               <div className="mt-3 flex flex-col gap-2">
                 {curriculum.map((c, i) => (
@@ -255,7 +320,7 @@ function LectureEditor() {
                       value={c}
                       onChange={(e) => updateItem(i, e.target.value)}
                       placeholder={`${i + 1}강 내용을 입력하세요`}
-                      className="min-w-0 flex-1 rounded-[16px] border border-ink/15 bg-white px-4 py-2.5 text-[15px] text-ink outline-none placeholder:text-dust focus:border-ink/40"
+                      className="min-w-0 flex-1 rounded-[14px] border border-ink/15 bg-white px-4 py-2.5 text-[15px] text-ink outline-none transition-colors placeholder:text-dust focus:border-ink/40"
                     />
                     <button
                       type="button"

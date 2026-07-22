@@ -4,14 +4,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 import { Eyebrow, Section } from "../../_components/ui";
 import { Reveal } from "../../_components/reveal";
-import { fields } from "../../_data/content";
 import type { PublicLecture } from "../queries";
 import { LectureAdminActions, NewLectureButton } from "./LectureAdminActions";
-
-const FILTERS = [
-  { slug: "all", label: "전체" },
-  ...fields.map((f) => ({ slug: f.slug, label: f.title })),
-];
 
 export function LecturesList({ lectures }: { lectures: PublicLecture[] }) {
   return (
@@ -28,8 +22,13 @@ function LecturesContent({ lectures }: { lectures: PublicLecture[] }) {
   const [open, setOpen] = useState<Record<string, boolean>>({});
   const visible = lectures.filter((l) => field === "all" || l.field === field);
   const toggle = (slug: string) => setOpen((m) => ({ ...m, [slug]: !m[slug] }));
-  const selectField = (slug: string) =>
-    router.replace(slug === "all" ? "/lectures" : `/lectures?field=${slug}`, { scroll: false });
+  const selectField = (f: string) =>
+    router.replace(f === "all" ? "/lectures" : `/lectures?field=${encodeURIComponent(f)}`, {
+      scroll: false,
+    });
+
+  // 실제 등록된 강의들의 분야에서 필터를 동적으로 생성 (사용자가 추가한 분야 자동 반영)
+  const FILTERS = ["all", ...Array.from(new Set(lectures.map((l) => l.field).filter(Boolean)))];
 
   return (
     <Section className="pt-36 sm:pt-44">
@@ -44,22 +43,24 @@ function LecturesContent({ lectures }: { lectures: PublicLecture[] }) {
         온라인·오프라인으로 진행되며, 수준과 목표에 맞춰 선택할 수 있습니다. 모든 강의는 완성작을 목표로 합니다.
       </p>
 
-      {/* 분야별 필터 */}
-      <div className="mt-10 flex flex-wrap gap-2">
-        {FILTERS.map((f) => (
-          <button
-            key={f.slug}
-            onClick={() => selectField(f.slug)}
-            className={`rounded-pill px-5 py-2 text-[15px] font-medium transition-colors ${
-              field === f.slug
-                ? "bg-ink text-cream"
-                : "bg-white text-ink border border-ink/15 hover:border-ink/40"
-            }`}
-          >
-            {f.label}
-          </button>
-        ))}
-      </div>
+      {/* 분야별 필터 — 등록된 강의 분야에서 동적 생성 */}
+      {FILTERS.length > 1 && (
+        <div className="mt-10 flex flex-wrap gap-2">
+          {FILTERS.map((f) => (
+            <button
+              key={f}
+              onClick={() => selectField(f)}
+              className={`rounded-pill px-5 py-2 text-[15px] font-medium transition-colors ${
+                field === f
+                  ? "bg-ink text-cream"
+                  : "bg-white text-ink border border-ink/15 hover:border-ink/40"
+              }`}
+            >
+              {f === "all" ? "전체" : f}
+            </button>
+          ))}
+        </div>
+      )}
 
       {visible.length === 0 ? (
         <p className="mt-16 rounded-stadium bg-lifted p-10 text-center text-[17px] text-dust">
@@ -81,6 +82,8 @@ function LecturesContent({ lectures }: { lectures: PublicLecture[] }) {
 
               <div className="flex flex-col pr-16 sm:pr-24">
                 <div className="flex items-center gap-2 text-[12px] font-medium text-slate">
+                    {l.field && <span>{l.field}</span>}
+                    {l.field &&<span className="h-1 w-1 rounded-full bg-dust" />}
                   {l.level && <span>{l.level}</span>}
                   {l.level && l.mode && <span className="h-1 w-1 rounded-full bg-dust" />}
                   {l.mode && <span>{l.mode}</span>}
