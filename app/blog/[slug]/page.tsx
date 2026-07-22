@@ -1,11 +1,17 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Arrow, Section } from "../../_components/ui";
-import { getPostBySlug, getPublishedPosts } from "../queries";
+import { getPostBySlug, getPublishedPosts, getPublishedSlugs } from "../queries";
 import { PostAdminActions } from "../_components/PostAdminActions";
 import { renderTiptap, injectHeadingIds, extractToc } from "../../_lib/render-tiptap";
 
 export const revalidate = 60;
+
+// 발행된 글을 빌드 시점에 정적 생성(SSG). 빌드 후 새 글은 on-demand로 생성(ISR).
+export async function generateStaticParams() {
+  const slugs = await getPublishedSlugs();
+  return slugs.map((slug) => ({ slug }));
+}
 
 export default async function BlogPostPage({
   params,

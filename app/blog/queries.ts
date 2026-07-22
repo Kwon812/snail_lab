@@ -82,3 +82,17 @@ export async function getPostBySlug(slug: string): Promise<PublicPost | null> {
     viewCount: data.view_count ?? 0,
   };
 }
+
+/** All published slugs — for generateStaticParams (build-time SSG). */
+export async function getPublishedSlugs(): Promise<string[]> {
+  const supabase = supabaseServer();
+  const { data, error } = await supabase
+    .from("posts")
+    .select("slug")
+    .eq("status", "PUBLISHED");
+  if (error) {
+    console.error("[getPublishedSlugs]", error.message);
+    return [];
+  }
+  return (data ?? []).map((p) => p.slug);
+}
