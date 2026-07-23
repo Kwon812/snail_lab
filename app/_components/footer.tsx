@@ -12,14 +12,6 @@ const COLS = [
     ],
   },
   {
-    head: "강의 분야",
-    links: [
-      { label: "미디어 리터러시", href: "/lectures" },
-      { label: "그림책", href: "/lectures" },
-      { label: "아동심리학", href: "/lectures" },
-    ],
-  },
-  {
     head: "함께하기",
     links: [
       { label: "강의 문의", href: "/contact" },

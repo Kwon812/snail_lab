@@ -210,6 +210,7 @@ function WriteEditor() {
                     </div>
                     <div className="flex items-center gap-2">
                         <button
+                            disabled={loadingPost}
                             onClick={() => setPreview((v) => !v)}
                             className="rounded-[20px] border-[1.5px] border-ink bg-white px-5 py-2 text-[15px] font-medium tracking-[-0.02em] transition-transform active:scale-95"
                         >
@@ -217,14 +218,14 @@ function WriteEditor() {
                         </button>
                         <button
                             onClick={() => save.mutate("DRAFT")}
-                            disabled={saving || navigating}
+                            disabled={saving || navigating || loadingPost}
                             className="inline-flex min-w-[92px] items-center justify-center rounded-[20px] border-[1.5px] border-ink bg-white px-5 py-2 text-[15px] font-medium tracking-[-0.02em] transition-transform active:scale-95 disabled:opacity-60"
                         >
                             {pendingKind === "DRAFT" ? <Spinner size={20}/> : "임시저장"}
                         </button>
                         <button
                             onClick={() => save.mutate("PUBLISHED")}
-                            disabled={saving || navigating}
+                            disabled={saving || navigating || loadingPost}
                             className="inline-flex min-w-[92px] items-center justify-center gap-2 rounded-[20px] border-[1.5px] border-ink bg-ink px-5 py-2 text-[15px] font-medium tracking-[-0.02em] text-cream transition-transform active:scale-95 disabled:opacity-60"
                         >
                             {pendingKind === "PUBLISHED" || navigating ? <Spinner size={20}/> : <>{isEdit ? "수정 발행" : "발행"} <Arrow className="h-4 w-4"/></>}
