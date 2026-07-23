@@ -1,6 +1,6 @@
 import "server-only";
-import { supabaseServer } from "../_lib/supabase";
-import { toneFor } from "../_lib/format";
+import { supabaseServer } from "../../_lib/supabase";
+import { toneFor } from "../../_lib/format";
 
 /* ------------------------------------------------------------------ */
 /*  Public lecture reads (anon key). RLS: only PUBLISHED rows readable. */

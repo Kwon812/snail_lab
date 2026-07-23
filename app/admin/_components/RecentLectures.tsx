@@ -1,8 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { deleteLecture, getLectures } from "../../_actions/lectures";
+import { useLectures, useDeleteLecture } from "../../lectures/_hooks/lectures";
 import { Spinner } from "../../_components/spinner";
 
 const FIELD_LABEL: Record<string, string> = {
@@ -12,16 +11,8 @@ const FIELD_LABEL: Record<string, string> = {
 };
 
 export function RecentLectures() {
-  const qc = useQueryClient();
-  const { data, isPending, isError, error } = useQuery({
-    queryKey: ["lectures"],
-    queryFn: () => getLectures(),
-  });
-
-  const del = useMutation({
-    mutationFn: (id: string) => deleteLecture(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["lectures"] }),
-  });
+  const { data, isPending, isError, error } = useLectures();
+  const del = useDeleteLecture();
 
   if (isPending) {
     return (

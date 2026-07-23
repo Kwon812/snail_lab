@@ -4,7 +4,7 @@ import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Arrow, Eyebrow, Section } from "../../_components/ui";
 import { Spinner } from "../../_components/spinner";
-import { signIn } from "../../_actions/auth";
+import { signIn } from "../_actions/auth";
 import {supabaseServerAuth} from "@/app/_lib/supabase-server";
 import {supabaseBrowser} from "@/app/_lib/supabase-browser";
 

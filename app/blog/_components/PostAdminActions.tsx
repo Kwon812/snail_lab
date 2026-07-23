@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
-import { deletePost } from "../../_actions/posts";
+import { deletePost } from "../_actions/posts";
 import { AdminOnly } from "../../_components/admin-gate";
 
 /**

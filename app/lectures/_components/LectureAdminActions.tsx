@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
-import { deleteLecture } from "../../_actions/lectures";
+import { deleteLecture } from "../_actions/lectures";
 import { AdminOnly } from "../../_components/admin-gate";
 
 /** Edit / delete controls for a single lecture, shown only to a logged-in admin. */

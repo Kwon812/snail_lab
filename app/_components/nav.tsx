@@ -11,6 +11,7 @@ const LINKS = [
   { href: "/about", label: "소개" },
   { href: "/lectures", label: "강의" },
   { href: "/blog", label: "블로그" },
+  { href: "/resources", label: "자료실" },
 ];
 
 export function Nav() {

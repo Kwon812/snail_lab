@@ -4,7 +4,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 import { Eyebrow, Section } from "../../_components/ui";
 import { Reveal } from "../../_components/reveal";
-import type { PublicLecture } from "../queries";
+import type { PublicLecture } from "../_queries/lectures";
 import { LectureAdminActions, NewLectureButton } from "./LectureAdminActions";
 
 export function LecturesList({ lectures }: { lectures: PublicLecture[] }) {
@@ -39,7 +39,7 @@ function LecturesContent({ lectures }: { lectures: PublicLecture[] }) {
       <h1 className="display mt-6 max-w-[18ch] text-[40px] leading-[1.02] sm:text-[60px]">
         시작점에 맞는 커리큘럼.
       </h1>
-      <p className="mt-6 max-w-[52ch] text-[18px] leading-[1.5] text-slate">
+      <p className="mt-6  text-[18px] leading-[1.5] text-slate">
         온라인·오프라인으로 진행되며, 수준과 목표에 맞춰 선택할 수 있습니다. 모든 강의는 완성작을 목표로 합니다.
       </p>
 
@@ -114,7 +114,7 @@ function LecturesContent({ lectures }: { lectures: PublicLecture[] }) {
                         open[l.slug] ? "mt-4 grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
                       }`}
                     >
-                      <ol className="flex min-h-0 max-w-[52ch] flex-col gap-1.5 overflow-hidden">
+                      <ol className="flex p-1 min-h-0  flex-col gap-1.5 overflow-hidden">
                         {l.curriculum.map((c, ci) => (
                           <li key={ci} className="flex items-start gap-2.5 text-[15px] leading-[1.5]">
                             <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-lifted text-[11px] font-medium text-slate ring-1 ring-ink/10">

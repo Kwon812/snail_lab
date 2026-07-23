@@ -2,12 +2,12 @@
 
 import Link from "next/link";
 import { Suspense, useEffect, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Arrow, Eyebrow, Section } from "../../../_components/ui";
 import { Spinner } from "../../../_components/spinner";
-import { createLecture, getLectures, getLecture, updateLecture } from "../../../_actions/lectures";
-import { extractLecturePlan } from "../../../_actions/lecture-ai";
+import { useLecture, useLectures, useSaveLecture } from "../../../lectures/_hooks/lectures";
+import type { LectureInput } from "../../../lectures/_actions/lectures";
+import { extractLecturePlan } from "../../../lectures/_actions/lecture-ai";
 import { ThumbnailField } from "../../_components/ThumbnailField";
 import { fields } from "../../../_data/content";
 import { toneFor } from "../../../_lib/format";
@@ -48,7 +48,7 @@ function LectureEditor() {
   const tone = toneFor(field || "lecture");
 
   // 등록된 강의들의 분야에서 datalist 제안 파생 (없으면 기본 제안)
-  const { data: allLectures } = useQuery({ queryKey: ["lectures"], queryFn: () => getLectures() });
+  const { data: allLectures } = useLectures();
   const fieldSuggestions = Array.from(
     new Set([
       ...(allLectures?.map((l) => l.field).filter(Boolean) ?? []),
@@ -93,11 +93,7 @@ function LectureEditor() {
   }
 
   // --- Edit mode: load existing lecture and hydrate the form ---
-  const { data: existing, isPending: loadingLecture } = useQuery({
-    queryKey: ["lecture", editId],
-    queryFn: () => getLecture(editId!),
-    enabled: isEdit,
-  });
+  const { data: existing, isPending: loadingLecture } = useLecture(editId);
   const [hydrated, setHydrated] = useState(false);
   useEffect(() => {
     if (!existing || hydrated) return;
@@ -113,54 +109,49 @@ function LectureEditor() {
     setHydrated(true);
   }, [existing, hydrated]);
 
-  const qc = useQueryClient();
-  const [pendingKind, setPendingKind] = useState<"DRAFT" | "PUBLISHED" | null>(null);
   const [lit, setLit] = useState(false); // brief glow on the status pill after a save
   const [navigating, setNavigating] = useState(false); // 발행 후 페이지 이동 대기 (버튼 계속 잠금)
 
-  const save = useMutation({
-    mutationFn: (next: "DRAFT" | "PUBLISHED") => {
-      const payload = {
-        field: field.trim(),
-        title,
-        level,
-        mode,
-        target,
-        intro,
-        thumbnail,
-        tone,
-        curriculum: curriculum.map((c) => c.trim()).filter(Boolean),
-        status: next,
-      };
-      return isEdit ? updateLecture(editId!, payload) : createLecture(payload);
-    },
-    onMutate: (next) => {
-      setPendingKind(next);
-      setStatus(next);
-    },
-    onSuccess: (_data, next) => {
-      setSaved(isEdit ? "수정되었습니다." : next === "PUBLISHED" ? "발행되었습니다." : "임시저장되었습니다.");
-      setLit(true);
-      setTimeout(() => setLit(false), 1400); // pill glows briefly to confirm the save
-      qc.invalidateQueries({ queryKey: ["lectures"] });
-      if (isEdit) qc.invalidateQueries({ queryKey: ["lecture", editId] });
-
-      if (next === "PUBLISHED") {
-        // 발행하면 공개 강의 목록으로 이동. replace로 편집 화면을 히스토리에서 치워 뒤로가기 방지.
-        // navigating을 유지해 이동 완료(언마운트)까지 버튼을 계속 잠금 → 재활성 깜빡임 방지.
-        setNavigating(true);
-        router.replace("/lectures");
-      } else {
-        setTimeout(() => setSaved(null), 2200);
-      }
-    },
-    onError: (err) => {
-      setSaved(`저장 실패: ${(err as Error).message}`);
-      setTimeout(() => setSaved(null), 3200);
-    },
-    onSettled: () => setPendingKind(null),
-  });
+  const save = useSaveLecture(isEdit ? editId : null);
   const saving = save.isPending;
+  // 어느 버튼을 눌러 저장 중인지는 뮤테이션에 전달된 변수에서 그대로 읽는다 (별도 state 불필요).
+  const pendingKind = saving ? save.variables?.status ?? null : null;
+
+  function doSave(next: "DRAFT" | "PUBLISHED") {
+    const payload: LectureInput = {
+      field: field.trim(),
+      title,
+      level,
+      mode,
+      target,
+      intro,
+      thumbnail,
+      tone,
+      curriculum: curriculum.map((c) => c.trim()).filter(Boolean),
+      status: next,
+    };
+    setStatus(next);
+    save.mutate(payload, {
+      onSuccess: () => {
+        setSaved(isEdit ? "수정되었습니다." : next === "PUBLISHED" ? "발행되었습니다." : "임시저장되었습니다.");
+        setLit(true);
+        setTimeout(() => setLit(false), 1400); // pill glows briefly to confirm the save
+
+        if (next === "PUBLISHED") {
+          // 발행하면 공개 강의 목록으로 이동. replace로 편집 화면을 히스토리에서 치워 뒤로가기 방지.
+          // navigating을 유지해 이동 완료(언마운트)까지 버튼을 계속 잠금 → 재활성 깜빡임 방지.
+          setNavigating(true);
+          router.replace("/lectures");
+        } else {
+          setTimeout(() => setSaved(null), 2200);
+        }
+      },
+      onError: (err) => {
+        setSaved(`저장 실패: ${err.message}`);
+        setTimeout(() => setSaved(null), 3200);
+      },
+    });
+  }
 
   return (
     <div className="pt-28 sm:pt-32">
@@ -180,14 +171,14 @@ function LectureEditor() {
               {preview ? "편집으로" : "미리보기"}
             </button>
             <button
-              onClick={() => save.mutate("DRAFT")}
+              onClick={() => doSave("DRAFT")}
               disabled={saving || analyzing || navigating || loadingLecture}
               className="inline-flex min-w-[92px] items-center justify-center rounded-[20px] border-[1.5px] border-ink bg-white px-5 py-2 text-[15px] font-medium tracking-[-0.02em] transition-transform active:scale-95 disabled:opacity-60"
             >
               {pendingKind === "DRAFT" ? <Spinner size={20} /> : "임시저장"}
             </button>
             <button
-              onClick={() => save.mutate("PUBLISHED")}
+              onClick={() => doSave("PUBLISHED")}
               disabled={saving || analyzing || navigating || (isEdit&&loadingLecture)}
               className="inline-flex min-w-[92px] items-center justify-center gap-2 rounded-[20px] border-[1.5px] border-ink bg-ink px-5 py-2 text-[15px] font-medium tracking-[-0.02em] text-cream transition-transform active:scale-95 disabled:opacity-60"
             >

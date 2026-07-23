@@ -7,11 +7,11 @@ import LinkExt from "@tiptap/extension-link";
 import ImageExt from "@tiptap/extension-image";
 import FileHandler from "@tiptap/extension-file-handler";
 import {Suspense, useEffect, useMemo, useState} from "react";
-import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
 import {useRouter, useSearchParams} from "next/navigation";
 import {Arrow, Chip, Eyebrow, Section} from "../../../_components/ui";
 import {Spinner} from "../../../_components/spinner";
-import {createPost, getPost, updatePost} from "../../../_actions/posts";
+import {usePost, useSavePost} from "../../../blog/_hooks/posts";
+import type {PostInput} from "../../../blog/_actions/posts";
 import {uploadImage} from "../../../_lib/upload";
 import {ThumbnailField} from "../../_components/ThumbnailField";
 import {categories} from "../../../_data/content";
@@ -129,11 +129,7 @@ function WriteEditor() {
     }
 
     // --- Edit mode: load the existing post and hydrate the form ---
-    const {data: existing, isPending: loadingPost} = useQuery({
-        queryKey: ["post", editId],
-        queryFn: () => getPost(editId!),
-        enabled: isEdit,
-    });
+    const {data: existing, isPending: loadingPost} = usePost(editId);
 
     const [hydrated, setHydrated] = useState(false);
     useEffect(() => {
@@ -148,55 +144,48 @@ function WriteEditor() {
         setHydrated(true);
     }, [existing, editor, hydrated]);
 
-    const qc = useQueryClient();
-    const [pendingKind, setPendingKind] = useState<"DRAFT" | "PUBLISHED" | null>(null);
     const [lit, setLit] = useState(false); // brief glow on the status pill after a save
     const [navigating, setNavigating] = useState(false); // 발행 후 페이지 이동 대기 (버튼 계속 잠금)
 
-    const save = useMutation({
-        mutationFn: (next: "DRAFT" | "PUBLISHED") => {
-            const payload = {
-                title,
-                excerpt,
-                category: cat,
-                tags,
-                thumbnail,
-                status: next,
-                // Tiptap JSON — round-trip to a plain object so it survives the Server Action
-                // boundary (getJSON()'s attrs otherwise deserialize as functions on the server).
-                content: JSON.parse(JSON.stringify(editor?.getJSON() ?? {})),
-            };
-            return isEdit ? updatePost(editId!, payload) : createPost(payload);
-        },
-        onMutate: (next) => {
-            setPendingKind(next);
-            setStatus(next);
-        },
-        onSuccess: (data, next) => {
-            setSaved(
-                isEdit ? "수정되었습니다." : next === "PUBLISHED" ? "발행되었습니다." : "임시저장되었습니다.",
-            );
-            setLit(true);
-            setTimeout(() => setLit(false), 1400); // pill glows briefly to confirm the save
-            qc.invalidateQueries({queryKey: ["posts"]});
-            if (isEdit) qc.invalidateQueries({queryKey: ["post", editId]});
-
-            if (next === "PUBLISHED") {
-                // 발행하면 공개 글로 이동. replace로 편집 화면을 히스토리에서 치워 뒤로가기 방지.
-                // navigating 유지로 이동 완료(언마운트)까지 버튼을 계속 잠금 → 재활성 깜빡임 방지.
-                setNavigating(true);
-                router.replace(data?.slug ? `/blog/${data.slug}` : "/blog");
-            } else {
-                setTimeout(() => setSaved(null), 2200);
-            }
-        },
-        onError: (err) => {
-            setSaved(`저장 실패: ${(err as Error).message}`);
-            setTimeout(() => setSaved(null), 3200);
-        },
-        onSettled: () => setPendingKind(null),
-    });
+    const save = useSavePost(isEdit ? editId : null);
     const saving = save.isPending;
+    // 어느 버튼을 눌러 저장 중인지는 뮤테이션에 전달된 변수에서 그대로 읽는다 (별도 state 불필요).
+    const pendingKind = saving ? save.variables?.status ?? null : null;
+
+    function doSave(next: "DRAFT" | "PUBLISHED") {
+        const payload: PostInput = {
+            title,
+            excerpt,
+            category: cat,
+            tags,
+            thumbnail,
+            status: next,
+            // Tiptap JSON — round-trip to a plain object so it survives the Server Action
+            // boundary (getJSON()'s attrs otherwise deserialize as functions on the server).
+            content: JSON.parse(JSON.stringify(editor?.getJSON() ?? {})),
+        };
+        setStatus(next);
+        save.mutate(payload, {
+            onSuccess: (data) => {
+                setSaved(isEdit ? "수정되었습니다." : next === "PUBLISHED" ? "발행되었습니다." : "임시저장되었습니다.");
+                setLit(true);
+                setTimeout(() => setLit(false), 1400); // pill glows briefly to confirm the save
+
+                if (next === "PUBLISHED") {
+                    // 발행하면 공개 글로 이동. replace로 편집 화면을 히스토리에서 치워 뒤로가기 방지.
+                    // navigating 유지로 이동 완료(언마운트)까지 버튼을 계속 잠금 → 재활성 깜빡임 방지.
+                    setNavigating(true);
+                    router.replace(data?.slug ? `/blog/${data.slug}` : "/blog");
+                } else {
+                    setTimeout(() => setSaved(null), 2200);
+                }
+            },
+            onError: (err) => {
+                setSaved(`저장 실패: ${err.message}`);
+                setTimeout(() => setSaved(null), 3200);
+            },
+        });
+    }
 
     return (
         <div className="pt-28 sm:pt-32">
@@ -216,14 +205,14 @@ function WriteEditor() {
                             {preview ? "편집으로" : "미리보기"}
                         </button>
                         <button
-                            onClick={() => save.mutate("DRAFT")}
+                            onClick={() => doSave("DRAFT")}
                             disabled={saving || navigating || loadingPost}
                             className="inline-flex min-w-[92px] items-center justify-center rounded-[20px] border-[1.5px] border-ink bg-white px-5 py-2 text-[15px] font-medium tracking-[-0.02em] transition-transform active:scale-95 disabled:opacity-60"
                         >
                             {pendingKind === "DRAFT" ? <Spinner size={20}/> : "임시저장"}
                         </button>
                         <button
-                            onClick={() => save.mutate("PUBLISHED")}
+                            onClick={() => doSave("PUBLISHED")}
                             disabled={saving || navigating || (isEdit&&loadingPost)}
                             className="inline-flex min-w-[92px] items-center justify-center gap-2 rounded-[20px] border-[1.5px] border-ink bg-ink px-5 py-2 text-[15px] font-medium tracking-[-0.02em] text-cream transition-transform active:scale-95 disabled:opacity-60"
                         >

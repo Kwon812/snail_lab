@@ -61,12 +61,34 @@ export async function uploadResourceFiles(
   return paths;
 }
 
-/** Create a short-lived signed download URL for a private resource (admin only). */
-export async function signedResourceUrl(path: string, fileName?: string): Promise<string> {
+/** Create a short-lived signed download URL for a resource (RLS: admin, or public if is_public). */
+export async function signedResourceUrl(path: string): Promise<string> {
   const supabase = supabaseBrowser();
-  const { data, error } = await supabase.storage
-    .from("resources")
-    .createSignedUrl(path, 60, fileName ? { download: fileName.normalize('NFC') } : { download: true });
+  const { data, error } = await supabase.storage.from("resources").createSignedUrl(path, 60);
   if (error) throw new Error(error.message);
   return data.signedUrl;
+}
+
+/**
+ * 서명 URL로 파일을 받아 blob으로 내려받는다.
+ * Supabase의 `download` 옵션(Content-Disposition 헤더)에 맡기면 한글 등 비ASCII 파일명이 깨지고,
+ * <a download> 속성도 교차 출처 URL(서명 URL)에서는 브라우저가 무시하므로,
+ * blob: URL(동일 출처 취급)에 파일명을 직접 지정해 우회한다.
+ */
+export async function downloadResource(path: string, fileName: string): Promise<void> {
+  const url = await signedResourceUrl(path);
+  const res = await fetch(url);
+  if (!res.ok) throw new Error("파일을 내려받지 못했습니다.");
+  const blob = await res.blob();
+  const objectUrl = URL.createObjectURL(blob);
+  try {
+    const a = document.createElement("a");
+    a.href = objectUrl;
+    a.download = fileName.normalize("NFC");
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+  }
 }

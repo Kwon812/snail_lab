@@ -5,7 +5,7 @@ import { useState } from "react";
 import { Eyebrow, Section } from "../../_components/ui";
 import { Reveal } from "../../_components/reveal";
 import { categories } from "../../_data/content";
-import type { PublicPostCard } from "../queries";
+import type { PublicPostCard } from "../_queries/posts";
 import { NewPostButton, PostAdminActions } from "./PostAdminActions";
 
 export function BlogList({ posts }: { posts: PublicPostCard[] }) {

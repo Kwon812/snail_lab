@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { supabaseServerAuth } from "../_lib/supabase-server";
+import { supabaseServerAuth } from "../../_lib/supabase-server";
 
 export type PostInput = {
   title: string;
@@ -83,7 +83,7 @@ export async function createPost(input: PostInput) {
   return data;
 }
 
-// 관리자 전용: DRAFT 포함 전체 목록 (세션 필요). 공개 목록은 blog/queries.ts.
+// 관리자 전용: DRAFT 포함 전체 목록 (세션 필요). 공개 목록은 blog/_queries/posts.ts.
 export async function getPosts(): Promise<PostListItem[]> {
   const supabase = await supabaseServerAuth();
   const { data, error } = await supabase
@@ -106,7 +106,7 @@ export type PostDetail = {
   content: unknown;
 };
 
-// 관리자 전용: id로 단건 조회 (수정 폼 채우기용). 공개 상세는 blog/queries.ts의 getPostBySlug.
+// 관리자 전용: id로 단건 조회 (수정 폼 채우기용). 공개 상세는 blog/_queries/posts.ts의 getPostBySlug.
 export async function getPost(id: string): Promise<PostDetail | null> {
   const supabase = await supabaseServerAuth();
   const { data, error } = await supabase
@@ -129,7 +129,6 @@ export async function updatePost(id: string, input: PostInput) {
     .single();
   if (readErr) throw new Error(readErr.message);
 
-  console.log(input.content)
   const { data, error } = await supabase
     .from("posts")
     .update({

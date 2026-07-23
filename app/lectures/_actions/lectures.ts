@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { supabaseServerAuth } from "../_lib/supabase-server";
+import { supabaseServerAuth } from "../../_lib/supabase-server";
 
 export type LectureInput = {
   field: string; // 분야 slug: media-literacy | picture-book | child-psychology
@@ -83,7 +83,7 @@ export async function createLecture(input: LectureInput) {
   return data;
 }
 
-// 관리자 전용: DRAFT 포함 전체 목록 (세션 필요). 공개 목록은 lectures/queries.ts.
+// 관리자 전용: DRAFT 포함 전체 목록 (세션 필요). 공개 목록은 lectures/_queries/lectures.ts.
 export async function getLectures(): Promise<LectureListItem[]> {
   const supabase = await supabaseServerAuth();
   const { data, error } = await supabase
@@ -109,7 +109,7 @@ export type LectureDetail = {
   status: "DRAFT" | "PUBLISHED";
 };
 
-// 관리자 전용: id로 단건 조회 (수정 폼 채우기용). 공개 목록은 lectures/queries.ts의 getPublishedLectures.
+// 관리자 전용: id로 단건 조회 (수정 폼 채우기용). 공개 목록은 lectures/_queries/lectures.ts의 getPublishedLectures.
 export async function getLecture(id: string): Promise<LectureDetail | null> {
   const supabase = await supabaseServerAuth();
   const { data, error } = await supabase

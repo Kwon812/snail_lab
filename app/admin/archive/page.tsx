@@ -1,16 +1,11 @@
 "use client";
 
 import {useState} from "react";
-import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
 import {Arrow, Eyebrow, Section} from "../../_components/ui";
 import {Spinner} from "../../_components/spinner";
-import {
-    createResource,
-    deleteResource,
-    getResources,
-    type ResourceItem,
-} from "../../_actions/resources";
-import {signedResourceUrl, uploadResourceFiles} from "../../_lib/upload";
+import type {ResourceItem} from "./_actions/resources";
+import {useDeleteResource, useResources, useToggleResourcePublic, useUploadResources} from "./_hooks/resources";
+import {downloadResource} from "../../_lib/upload";
 
 function fmtSize(bytes: number | null): string {
     if (!bytes) return "";
@@ -29,74 +24,35 @@ function extOf(name: string): string {
 }
 
 export default function ArchivePage() {
-    const qc = useQueryClient();
-    const {data, isPending, isError, error} = useQuery({
-        queryKey: ["resources"],
-        queryFn: () => getResources(),
-    });
+    const {data, isPending, isError, error} = useResources();
 
     // 업로드 폼
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
     const [files, setFiles] = useState<File [] | null>(null);
-    const [uploading, setUploading] = useState(false);
+    const upload = useUploadResources();
 
     async function onUpload() {
         if (!files) return;
-        setUploading(true);
         try {
-            const path = await uploadResourceFiles(files);
-            await Promise.all(files.map((file,i) => {
-                return createResource({
-                    title: title.trim() || file.name.normalize("NFC"),
-                    description: description.trim() || undefined,
-                    path:path[i],
-                    fileName: file.name.normalize("NFC"),
-                    fileType: file.type,
-                    fileSize: file.size,
-                })
-            }))
-            // await createResource({
-            //   title: title.trim() || file.name,
-            //   description: description.trim() || undefined,
-            //   path,
-            //   fileName: file.name,
-            //   fileType: file.type,
-            //   fileSize: file.size,
-            // });
+            await upload.mutateAsync({title, description, files});
             setTitle("");
             setDescription("");
             setFiles(null);
-            qc.invalidateQueries({queryKey: ["resources"]});
         } catch (err) {
             alert(`업로드 실패: ${(err as Error).message}`);
-        } finally {
-            setUploading(false);
         }
     }
 
-    const del = useMutation({
-        mutationFn: (r: ResourceItem) => deleteResource(r.id, r.path),
-        onSuccess: () => qc.invalidateQueries({queryKey: ["resources"]}),
-    });
+    const del = useDeleteResource();
+    const togglePublic = useToggleResourcePublic();
 
     const [downloading, setDownloading] = useState<string | null>(null);
 
     async function download(r: ResourceItem) {
         setDownloading(r.id);
-
         try {
-            const url = await signedResourceUrl(r.path, r.file_name);
-
-            console.log(url)
-            console.log(r.file_name)
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = r.file_name.normalize('NFC');
-
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
+            await downloadResource(r.path, r.file_name);
         } catch (err) {
             alert(`다운로드 실패: ${(err as Error).message}`);
         } finally {
@@ -111,7 +67,8 @@ export default function ArchivePage() {
                 강의 자료 보관함.
             </h1>
             <p className="mt-5 max-w-[48ch] text-[17px] leading-[1.5] text-slate">
-                PPT·PDF 등 강의 자료를 올려두고 관리합니다. 관리자만 열람·다운로드할 수 있습니다.
+                PPT·PDF 등 강의 자료를 올려두고 관리합니다. 기본은 관리자만 열람할 수 있고, &quot;공개&quot;로 전환한
+                자료는 자료실 페이지에서 누구나 내려받을 수 있습니다.
             </p>
 
             {/* 업로드 폼 */}
@@ -151,10 +108,10 @@ export default function ArchivePage() {
 
                     <button
                         onClick={onUpload}
-                        disabled={!files || uploading}
+                        disabled={!files || upload.isPending}
                         className="ml-auto inline-flex min-w-[100px] items-center justify-center gap-2 rounded-[20px] bg-ink px-5 py-2.5 text-[15px] font-medium text-cream transition-transform active:scale-95 disabled:opacity-50"
                     >
-                        {uploading ? <Spinner size={20}/> : <>업로드 <Arrow className="h-4 w-4"/></>}
+                        {upload.isPending ? <Spinner size={20}/> : <>업로드 <Arrow className="h-4 w-4"/></>}
                     </button>
                 </div>
             </div>
@@ -197,6 +154,17 @@ export default function ArchivePage() {
                                     className="shrink-0 rounded-pill border border-ink/15 bg-white px-4 py-1.5 text-[13px] font-medium text-ink transition-colors hover:border-ink/40 disabled:opacity-50"
                                 >
                                     {downloading === r.id ? "준비 중…" : "다운로드"}
+                                </button>
+                                <button
+                                    onClick={() => togglePublic.mutate(r)}
+                                    disabled={togglePublic.isPending}
+                                    className={`shrink-0 rounded-pill border px-4 py-1.5 text-[13px] font-medium transition-colors disabled:opacity-50 ${
+                                        r.is_public
+                                            ? "border-transparent bg-ink text-cream hover:opacity-90"
+                                            : "border-ink/15 bg-white text-ink hover:border-ink/40"
+                                    }`}
+                                >
+                                    {r.is_public ? "공개중" : "비공개"}
                                 </button>
                                 <button
                                     onClick={() => {

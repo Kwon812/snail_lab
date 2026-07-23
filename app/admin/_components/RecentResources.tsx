@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { deleteResource, getResources, type ResourceItem } from "../../_actions/resources";
-import { signedResourceUrl } from "../../_lib/upload";
+import { useResources, useDeleteResource } from "../archive/_hooks/resources";
+import type { ResourceItem } from "../archive/_actions/resources";
+import { downloadResource } from "../../_lib/upload";
 import { Spinner } from "../../_components/spinner";
 
 function fmtSize(bytes: number | null): string {
@@ -17,23 +17,14 @@ function extOf(name: string): string {
 }
 
 export function RecentResources() {
-  const qc = useQueryClient();
-  const { data, isPending, isError, error } = useQuery({
-    queryKey: ["resources"],
-    queryFn: () => getResources(),
-  });
-
-  const del = useMutation({
-    mutationFn: (r: ResourceItem) => deleteResource(r.id, r.path),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["resources"] }),
-  });
+  const { data, isPending, isError, error } = useResources();
+  const del = useDeleteResource();
 
   const [downloading, setDownloading] = useState<string | null>(null);
   async function download(r: ResourceItem) {
     setDownloading(r.id);
     try {
-      const url = await signedResourceUrl(r.path, r.file_name);
-      window.location.href = url;
+      await downloadResource(r.path, r.file_name);
     } catch (err) {
       alert(`다운로드 실패: ${(err as Error).message}`);
     } finally {

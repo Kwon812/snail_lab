@@ -114,13 +114,21 @@ create table if not exists public.resources (
   file_name   text not null,
   file_type   text,                    -- mime type
   file_size   bigint,                  -- bytes
+  is_public   boolean not null default false, -- true인 자료만 /resources 공개 페이지에 노출
   created_at  timestamptz not null default now()
 );
+
+alter table public.resources add column if not exists is_public boolean not null default false;
 
 alter table public.resources enable row level security;
 drop policy if exists "resources admin all" on public.resources;
 create policy "resources admin all" on public.resources for all
   to authenticated using (true) with check (true);
+
+-- 공개 자료(is_public = true)는 로그인 없이도 조회 가능
+drop policy if exists "resources public read" on public.resources;
+create policy "resources public read" on public.resources for select
+  to public using (is_public = true);
 
 -- 비공개 버킷 (public: false) → 서명 URL로만 다운로드
 insert into storage.buckets (id, name, public)
@@ -131,3 +139,15 @@ drop policy if exists "resources bucket admin" on storage.objects;
 create policy "resources bucket admin" on storage.objects
   for all to authenticated
   using (bucket_id = 'resources') with check (bucket_id = 'resources');
+
+-- 공개 자료의 파일도 서명 URL 발급이 가능해야 하므로, 해당 파일 경로에 한해 익명 select 허용
+drop policy if exists "resources bucket public read" on storage.objects;
+create policy "resources bucket public read" on storage.objects
+  for select to public
+  using (
+    bucket_id = 'resources'
+    and exists (
+      select 1 from public.resources r
+      where r.path = storage.objects.name and r.is_public = true
+    )
+  );

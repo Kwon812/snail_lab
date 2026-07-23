@@ -2,7 +2,7 @@ import Link from "next/link";
 import {Arrow, Eyebrow, Orbit, Portrait, Section} from "./_components/ui";
 import {Reveal} from "./_components/reveal";
 import {clients, fields, testimonials} from "./_data/content";
-import {getPublishedPosts} from "./blog/queries";
+import {getPublishedPosts} from "./blog/_queries/posts";
 
 export const revalidate = 60;
 

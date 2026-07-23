@@ -1,4 +1,4 @@
-import { getPublishedPosts } from "./queries";
+import { getPublishedPosts } from "./_queries/posts";
 import { BlogList } from "./_components/BlogList";
 
 export const revalidate = 60; // ISR — refresh published list periodically

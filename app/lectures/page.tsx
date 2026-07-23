@@ -1,4 +1,4 @@
-import { getPublishedLectures } from "./queries";
+import { getPublishedLectures } from "./_queries/lectures";
 import { LecturesList } from "./_components/LecturesList";
 
 export const revalidate = 60;

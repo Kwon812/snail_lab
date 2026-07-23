@@ -5,7 +5,7 @@ import { RecentPosts } from "./_components/RecentPosts";
 import { RecentLectures } from "./_components/RecentLectures";
 import { RecentResources } from "./_components/RecentResources";
 import { SignOutButton } from "./_components/SignOutButton";
-import {getCurrentUser} from "@/app/_actions/auth";
+import {getCurrentUser} from "./_actions/auth";
 import {supabaseServerAuth} from "@/app/_lib/supabase-server";
 import {notFound} from "next/navigation";
 

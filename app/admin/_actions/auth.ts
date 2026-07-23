@@ -1,7 +1,6 @@
 "use server";
 
-import { redirect } from "next/navigation";
-import { supabaseServerAuth } from "../_lib/supabase-server";
+import { supabaseServerAuth } from "../../_lib/supabase-server";
 
 export async function signIn(email: string, password: string) {
   const supabase = await supabaseServerAuth();
@@ -10,11 +9,7 @@ export async function signIn(email: string, password: string) {
   return { error: null };
 }
 
-export async function signOut() {
-  const supabase = await supabaseServerAuth();
-  await supabase.auth.signOut();
-  redirect("/admin/login");
-}
+// 로그아웃은 SignOutButton에서 브라우저 클라이언트로 처리(onAuthStateChange 즉시 반영).
 
 export async function getCurrentUser() {
   const supabase = await supabaseServerAuth();

@@ -1,22 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { deletePost, getPosts } from "../../_actions/posts";
+import { usePosts, useDeletePost } from "../../blog/_hooks/posts";
 import { Spinner } from "../../_components/spinner";
 import { Arrow } from "../../_components/ui";
 
 export function RecentPosts() {
-  const qc = useQueryClient();
-  const { data, isPending, isError, error } = useQuery({
-    queryKey: ["posts"],
-    queryFn: () => getPosts(),
-  });
-
-  const del = useMutation({
-    mutationFn: (id: string) => deletePost(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["posts"] }),
-  });
+  const { data, isPending, isError, error } = usePosts();
+  const del = useDeletePost();
 
   if (isPending) {
     return (
