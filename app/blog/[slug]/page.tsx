@@ -5,6 +5,7 @@ import {Arrow, Section} from "../../_components/ui";
 import {getPostBySlug, getPublishedPosts, getPublishedSlugs} from "../_queries/posts";
 import {PostAdminActions} from "../_components/PostAdminActions";
 import {renderTiptap, injectHeadingIds, extractToc} from "../../_lib/render-tiptap";
+import {pageMetadata} from "../../_lib/seo";
 
 export const revalidate = 60;
 
@@ -23,21 +24,10 @@ export async function generateMetadata({
     const post = await getPostBySlug(slug);
     if (!post) return {};
 
+    const base = pageMetadata(post.title, post.excerpt || "블로그 글", post.thumbnail || undefined);
     return {
-        title: post.title,
-        description: post.excerpt || undefined,
-        openGraph: {
-            title: post.title,
-            description: post.excerpt || undefined,
-            type: "article",
-            images: post.thumbnail ? [{url: post.thumbnail}] : undefined,
-        },
-        twitter: {
-            card: "summary_large_image",
-            title: post.title,
-            description: post.excerpt || undefined,
-            images: post.thumbnail ? [post.thumbnail] : undefined,
-        },
+        ...base,
+        openGraph: {...base.openGraph, type: "article"},
     };
 }
 
@@ -97,7 +87,7 @@ export default async function BlogPostPage({
                     <img
                         src={post.thumbnail}
                         alt={post.title}
-                        className="rounded-lg object-fill mx-auto max-w-[980px]"
+                        className="mx-auto h-auto w-full max-w-[980px] rounded-lg object-cover"
                     />
                 )}
             </Section>

@@ -1,12 +1,12 @@
-import type { Metadata } from "next";
 import { Eyebrow, Portrait, Section } from "../_components/ui";
 import { Reveal } from "../_components/reveal";
 import { credentials, timeline } from "../_data/content";
+import { pageMetadata } from "../_lib/seo";
 
-export const metadata: Metadata = {
-  title: "강사 소개",
-  description: "미디어 리터러시 · 그림책 · 아동심리학 강사 최미선의 이력과 활동을 소개합니다.",
-};
+export const metadata = pageMetadata(
+  "강사 소개",
+  "미디어 리터러시 · 그림책 · 아동심리학 강사 최미선의 이력과 활동을 소개합니다.",
+);
 
 const stats = [
   { num: "3,000+", label: "누적 교육 참여자" },

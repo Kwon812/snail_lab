@@ -1,11 +1,11 @@
-import type { Metadata } from "next";
 import { getPublishedLectures } from "./_queries/lectures";
 import { LecturesList } from "./_components/LecturesList";
+import { pageMetadata } from "../_lib/seo";
 
-export const metadata: Metadata = {
-  title: "강의 소개",
-  description: "미디어 리터러시 · 그림책 · 아동심리학, 수준과 목표에 맞춰 선택하는 온·오프라인 강의 커리큘럼.",
-};
+export const metadata = pageMetadata(
+  "강의 소개",
+  "미디어 리터러시 · 그림책 · 아동심리학, 수준과 목표에 맞춰 선택하는 온·오프라인 강의 커리큘럼.",
+);
 
 export const revalidate = 60;
 

@@ -4,6 +4,7 @@ import "./globals.css";
 import { Nav } from "./_components/nav";
 import { Footer } from "./_components/footer";
 import { Providers } from "./_lib/providers";
+import { SITE_NAME } from "./_lib/seo";
 
 const sofia = Sofia_Sans({
   variable: "--font-sofia",
@@ -11,7 +12,6 @@ const sofia = Sofia_Sans({
   display: "swap",
 });
 
-const SITE_NAME = "달팽이 그림책 연구소";
 const SITE_DESC =
   "달팽이 그림책 연구소. 미디어 리터러시 · 그림책 · 아동심리학으로 아이와 미디어 사이 건강한 거리를 만드는 학부모·교사·기관 대상 교육.";
 
