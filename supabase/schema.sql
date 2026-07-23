@@ -100,3 +100,34 @@ create policy "media public read" on storage.objects
 create policy "media auth write" on storage.objects
   for all to authenticated
   using (bucket_id = 'media') with check (bucket_id = 'media');
+
+
+-- ------------------------------------------------------------------
+--  자료실 (관리자 전용): resources 테이블 + 비공개 스토리지 버킷
+--  읽기·쓰기·다운로드 모두 로그인한 관리자(authenticated)만.
+-- ------------------------------------------------------------------
+create table if not exists public.resources (
+  id          uuid primary key default gen_random_uuid(),
+  title       text not null,
+  description text,
+  path        text not null,           -- 비공개 버킷 내 파일 경로
+  file_name   text not null,
+  file_type   text,                    -- mime type
+  file_size   bigint,                  -- bytes
+  created_at  timestamptz not null default now()
+);
+
+alter table public.resources enable row level security;
+drop policy if exists "resources admin all" on public.resources;
+create policy "resources admin all" on public.resources for all
+  to authenticated using (true) with check (true);
+
+-- 비공개 버킷 (public: false) → 서명 URL로만 다운로드
+insert into storage.buckets (id, name, public)
+values ('resources', 'resources', false)
+on conflict (id) do nothing;
+
+drop policy if exists "resources bucket admin" on storage.objects;
+create policy "resources bucket admin" on storage.objects
+  for all to authenticated
+  using (bucket_id = 'resources') with check (bucket_id = 'resources');

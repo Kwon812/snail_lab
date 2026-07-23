@@ -224,10 +224,10 @@ function WriteEditor() {
                         </button>
                         <button
                             onClick={() => save.mutate("PUBLISHED")}
-                            disabled={saving || navigating || loadingPost}
+                            disabled={saving || navigating || (isEdit&&loadingPost)}
                             className="inline-flex min-w-[92px] items-center justify-center gap-2 rounded-[20px] border-[1.5px] border-ink bg-ink px-5 py-2 text-[15px] font-medium tracking-[-0.02em] text-cream transition-transform active:scale-95 disabled:opacity-60"
                         >
-                            {pendingKind === "PUBLISHED" || navigating || loadingPost ? <Spinner size={20}/> : <>{isEdit ? "수정 발행" : "발행"} <Arrow className="h-4 w-4"/></>}
+                            {pendingKind === "PUBLISHED" || navigating || (isEdit&&loadingPost) ? <Spinner size={20}/> : <>{isEdit ? "수정 발행" : "발행"} <Arrow className="h-4 w-4"/></>}
                         </button>
                     </div>
                 </div>

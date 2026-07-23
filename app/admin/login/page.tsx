@@ -5,6 +5,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Arrow, Eyebrow, Section } from "../../_components/ui";
 import { Spinner } from "../../_components/spinner";
 import { signIn } from "../../_actions/auth";
+import {supabaseServerAuth} from "@/app/_lib/supabase-server";
+import {supabaseBrowser} from "@/app/_lib/supabase-browser";
 
 export default function LoginPage() {
   return (
@@ -28,14 +30,17 @@ function LoginForm() {
     e.preventDefault();
     setLoading(true);
     setError(null);
-    const res = await signIn(email, password);
-    if (res.error) {
+
+    const supabase = await supabaseBrowser();
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    // const res = await signIn(email, password);
+    if (error) {
       setError("로그인에 실패했습니다. 이메일과 비밀번호를 확인해 주세요.");
       setLoading(false);
       return;
     }
-    router.replace(next);
     router.refresh();
+    router.replace(next);
   }
 
   return (

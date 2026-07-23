@@ -3,7 +3,11 @@ import type { Metadata } from "next";
 import { Arrow, Eyebrow, Section } from "../_components/ui";
 import { RecentPosts } from "./_components/RecentPosts";
 import { RecentLectures } from "./_components/RecentLectures";
+import { RecentResources } from "./_components/RecentResources";
 import { SignOutButton } from "./_components/SignOutButton";
+import {getCurrentUser} from "@/app/_actions/auth";
+import {supabaseServerAuth} from "@/app/_lib/supabase-server";
+import {notFound} from "next/navigation";
 
 export const metadata: Metadata = {
   title: "관리자",
@@ -22,9 +26,20 @@ const actions = [
     desc: "분야 · 커리큘럼 · 진행 방식을 갖춘 강의를 폼으로 등록합니다.",
     tone: { a: "#f7b25a", b: "#b8420f" },
   },
+  {
+    href: "/admin/archive",
+    label: "자료실",
+    desc: "PPT·PDF·HWP 등 강의 자료를 올리고 관리합니다. 관리자만 열람·다운로드.",
+    tone: { a: "#ef8a4c", b: "#9a3a0a" },
+  },
 ];
 
-export default function AdminHome() {
+export default async function AdminHome() {
+    const supabase = await supabaseServerAuth();
+    const {
+        data: { user },
+    } = await supabase.auth.getUser();
+    if(!user) return notFound()
   return (
     <Section className="pt-36 sm:pt-44">
       <div className="flex items-start justify-between gap-4">
@@ -38,7 +53,7 @@ export default function AdminHome() {
         작성할 콘텐츠 유형을 선택하세요.
       </p>
 
-      <div className="mt-14 grid grid-cols-1 gap-6 sm:grid-cols-2">
+      <div className="mt-14 grid grid-cols-1 gap-6  md:grid-cols-2 lg:grid-cols-3">
         {actions.map((a) => (
           <Link
             key={a.href}
@@ -77,6 +92,19 @@ export default function AdminHome() {
         <h2 className="display mt-5 text-[28px] leading-[1.05] sm:text-[36px]">등록한 강의</h2>
         <div className="mt-8">
           <RecentLectures />
+        </div>
+      </div>
+
+      {/* 자료실 목록 */}
+      <div className="mt-16">
+        <div className="flex items-end justify-between gap-4">
+          <div>
+            <Eyebrow>자료실</Eyebrow>
+            <h2 className="display mt-5 text-[28px] leading-[1.05] sm:text-[36px]">올린 자료</h2>
+          </div>
+        </div>
+        <div className="mt-8">
+          <RecentResources />
         </div>
       </div>
     </Section>

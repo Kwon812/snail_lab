@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { Arrow } from "./ui";
+import {AdminOnly} from "@/app/_components/admin-gate";
 
 const LINKS = [
   { href: "/about", label: "소개" },
@@ -58,6 +59,17 @@ export function Nav() {
                 </Link>
               );
             })}
+            <AdminOnly>
+              <Link
+                  key={'adminPage'}
+                  href={'/admin'}
+                  className={`text-[16px] font-medium tracking-[-0.02em] transition-colors ${
+                      pathname==='/admin' ? "text-ink" : "text-ink/55 hover:text-ink"
+                  }`}
+              >
+                관리자 페이지
+              </Link>
+            </AdminOnly>
           </div>
 
           <Link

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import { supabaseBrowser } from "../_lib/supabase-browser";
+import {getCurrentUser} from "@/app/_actions/auth";
 
 /** True when a Supabase session exists in the browser (i.e. admin is logged in). */
 export function useIsAdmin(): boolean {
@@ -9,8 +10,8 @@ export function useIsAdmin(): boolean {
   useEffect(() => {
     const supabase = supabaseBrowser();
     supabase.auth.getUser().then(({ data }) => setIsAdmin(!!data.user));
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) =>
-      setIsAdmin(!!session?.user),
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) =>{
+      setIsAdmin(!!session?.user)}
     );
     return () => sub.subscription.unsubscribe();
   }, []);
