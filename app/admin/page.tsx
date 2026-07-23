@@ -35,11 +35,7 @@ const actions = [
 ];
 
 export default async function AdminHome() {
-    const supabase = await supabaseServerAuth();
-    const {
-        data: { user },
-    } = await supabase.auth.getUser();
-    if(!user) return notFound()
+
   return (
     <Section className="pt-36 sm:pt-44">
       <div className="flex items-start justify-between gap-4">
