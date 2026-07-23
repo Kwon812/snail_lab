@@ -1,5 +1,4 @@
 import Link from "next/link";
-import type { Metadata } from "next";
 import { Arrow, Eyebrow, Section } from "../_components/ui";
 import { RecentPosts } from "./_components/RecentPosts";
 import { RecentLectures } from "./_components/RecentLectures";
@@ -8,10 +7,6 @@ import { SignOutButton } from "./_components/SignOutButton";
 import {getCurrentUser} from "./_actions/auth";
 import {supabaseServerAuth} from "@/app/_lib/supabase-server";
 import {notFound} from "next/navigation";
-
-export const metadata: Metadata = {
-  title: "관리자",
-};
 
 const actions = [
   {

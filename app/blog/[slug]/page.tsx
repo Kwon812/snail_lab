@@ -1,3 +1,4 @@
+import type {Metadata} from "next";
 import Link from "next/link";
 import {notFound} from "next/navigation";
 import {Arrow, Section} from "../../_components/ui";
@@ -11,6 +12,33 @@ export const revalidate = 60;
 export async function generateStaticParams() {
     const slugs = await getPublishedSlugs();
     return slugs.map((slug) => ({slug}));
+}
+
+export async function generateMetadata({
+    params,
+}: {
+    params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+    const {slug} = await params;
+    const post = await getPostBySlug(slug);
+    if (!post) return {};
+
+    return {
+        title: post.title,
+        description: post.excerpt || undefined,
+        openGraph: {
+            title: post.title,
+            description: post.excerpt || undefined,
+            type: "article",
+            images: post.thumbnail ? [{url: post.thumbnail}] : undefined,
+        },
+        twitter: {
+            card: "summary_large_image",
+            title: post.title,
+            description: post.excerpt || undefined,
+            images: post.thumbnail ? [post.thumbnail] : undefined,
+        },
+    };
 }
 
 export default async function BlogPostPage({

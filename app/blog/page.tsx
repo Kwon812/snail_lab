@@ -1,5 +1,11 @@
+import type { Metadata } from "next";
 import { getPublishedPosts } from "./_queries/posts";
 import { BlogList } from "./_components/BlogList";
+
+export const metadata: Metadata = {
+  title: "블로그",
+  description: "미디어 리터러시 · 그림책 · 아동심리학에 관한 글 모음.",
+};
 
 export const revalidate = 60; // ISR — refresh published list periodically
 
