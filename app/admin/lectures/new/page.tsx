@@ -170,7 +170,6 @@ function LectureEditor() {
           <div className="flex items-center gap-3">
             <Eyebrow>{isEdit ? "강의 수정" : "강의 작성"}</Eyebrow>
             <StatusPill status={status} lit={lit} />
-            {isEdit && loadingLecture && <Spinner size={20} />}
           </div>
           <div className="flex items-center gap-2">
             <button
@@ -192,7 +191,7 @@ function LectureEditor() {
               disabled={saving || analyzing || navigating || loadingLecture}
               className="inline-flex min-w-[92px] items-center justify-center gap-2 rounded-[20px] border-[1.5px] border-ink bg-ink px-5 py-2 text-[15px] font-medium tracking-[-0.02em] text-cream transition-transform active:scale-95 disabled:opacity-60"
             >
-              {pendingKind === "PUBLISHED" || navigating ? <Spinner size={20} /> : <>{isEdit ? "수정 발행" : "발행"} <Arrow className="h-4 w-4" /></>}
+              {pendingKind === "PUBLISHED" || navigating || loadingLecture || analyzing ? <Spinner size={20} /> : <>{isEdit ? "수정 발행" : "발행"} <Arrow className="h-4 w-4" /></>}
             </button>
           </div>
         </div>
