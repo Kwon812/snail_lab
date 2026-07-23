@@ -38,10 +38,10 @@ export function BlogList({ posts }: { posts: PublicPostCard[] }) {
             <button
               key={c}
               onClick={() => setCat(c)}
-              className={`rounded-pill px-5 py-2 text-[15px] font-medium transition-colors ${
+              className={`rounded-pill px-5 py-2 text-[15px] font-medium transition-all ${
                 cat === c
-                  ? "bg-ink text-cream"
-                  : "bg-white text-ink border border-ink/15 hover:border-ink/40"
+                  ? "bg-ink text-cream shadow-[0_6px_16px_rgba(20,20,19,0.18)]"
+                  : "bg-white text-slate shadow-[0_2px_8px_rgba(0,0,0,0.05)] hover:-translate-y-0.5 hover:text-ink"
               }`}
             >
               {c}

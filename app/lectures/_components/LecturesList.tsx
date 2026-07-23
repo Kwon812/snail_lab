@@ -43,22 +43,25 @@ function LecturesContent({ lectures }: { lectures: PublicLecture[] }) {
         온라인·오프라인으로 진행되며, 수준과 목표에 맞춰 선택할 수 있습니다. 모든 강의는 완성작을 목표로 합니다.
       </p>
 
-      {/* 분야별 필터 — 등록된 강의 분야에서 동적 생성 */}
+      {/* 분야별 필터 — 밑줄 탭 바 (리스트 구분선과 통일) */}
       {FILTERS.length > 1 && (
-        <div className="mt-10 flex flex-wrap gap-2">
-          {FILTERS.map((f) => (
-            <button
-              key={f}
-              onClick={() => selectField(f)}
-              className={`rounded-pill px-5 py-2 text-[15px] font-medium transition-colors ${
-                field === f
-                  ? "bg-ink text-cream"
-                  : "bg-white text-ink border border-ink/15 hover:border-ink/40"
-              }`}
-            >
-              {f === "all" ? "전체" : f}
-            </button>
-          ))}
+        <div className="mt-10 flex flex-wrap items-center gap-x-7 gap-y-1 border-b border-ink/10">
+          {FILTERS.map((f) => {
+            const active = field === f;
+            return (
+              <button
+                key={f}
+                onClick={() => selectField(f)}
+                className={`-mb-px border-b-2 pb-3 text-[15px] font-medium transition-colors ${
+                  active
+                    ? "border-signal text-ink"
+                    : "border-transparent text-slate hover:text-ink"
+                }`}
+              >
+                {f === "all" ? "전체" : f}
+              </button>
+            );
+          })}
         </div>
       )}
 
@@ -67,7 +70,7 @@ function LecturesContent({ lectures }: { lectures: PublicLecture[] }) {
           아직 등록된 강의가 없습니다.
         </p>
       ) : (
-        <Reveal stagger className="mt-14 flex flex-col border-t border-ink/10">
+        <Reveal stagger className="mt-6 flex flex-col">
           {visible.map((l, i) => (
             <article
               key={l.slug}
