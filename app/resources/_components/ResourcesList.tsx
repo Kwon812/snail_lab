@@ -42,13 +42,13 @@ export function ResourcesList({ resources }: { resources: PublicResourceItem[] }
         공개 자료.
       </h1>
       <p className="mt-5 max-w-[48ch] text-[17px] leading-[1.5] text-slate">
-        누구나 내려받을 수 있도록 공개한 강의 자료입니다.
+        강의 자료 목록입니다. &quot;다운로드&quot; 표시가 있는 자료만 내려받을 수 있습니다.
       </p>
 
       <div className="mt-10">
         {resources.length === 0 ? (
           <p className="rounded-[20px] bg-lifted p-8 text-center text-[15px] text-dust">
-            아직 공개된 자료가 없습니다.
+            아직 올라온 자료가 없습니다.
           </p>
         ) : (
           <ul className="flex flex-col border-t border-ink/10">
@@ -64,13 +64,19 @@ export function ResourcesList({ resources }: { resources: PublicResourceItem[] }
                     {r.file_name} · {fmtSize(r.file_size)} · {fmtDate(r.created_at)}
                   </p>
                 </div>
-                <button
-                  onClick={() => download(r)}
-                  disabled={downloading === r.id}
-                  className="shrink-0 rounded-pill border border-ink/15 bg-white px-4 py-1.5 text-[13px] font-medium text-ink transition-colors hover:border-ink/40 disabled:opacity-50"
-                >
-                  {downloading === r.id ? "준비 중…" : "다운로드"}
-                </button>
+                {r.is_public ? (
+                  <button
+                    onClick={() => download(r)}
+                    disabled={downloading === r.id}
+                    className="shrink-0 rounded-pill border border-ink/15 bg-white px-4 py-1.5 text-[13px] font-medium text-ink transition-colors hover:border-ink/40 disabled:opacity-50"
+                  >
+                    {downloading === r.id ? "준비 중…" : "다운로드"}
+                  </button>
+                ) : (
+                  <span className="shrink-0 rounded-pill px-4 py-1.5 text-[13px] font-medium text-dust">
+                    비공개
+                  </span>
+                )}
               </li>
             ))}
           </ul>

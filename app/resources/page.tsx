@@ -4,7 +4,7 @@ import { pageMetadata } from "../_lib/seo";
 
 export const metadata = pageMetadata(
   "자료실",
-  "누구나 내려받을 수 있도록 공개한 강의 자료 모음.",
+  "강의 자료 목록과 공개 자료 다운로드.",
 );
 
 export const revalidate = 60;

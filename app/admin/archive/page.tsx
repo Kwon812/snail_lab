@@ -67,8 +67,8 @@ export default function ArchivePage() {
                 강의 자료 보관함.
             </h1>
             <p className="mt-5 max-w-[48ch] text-[17px] leading-[1.5] text-slate">
-                PPT·PDF 등 강의 자료를 올려두고 관리합니다. 기본은 관리자만 열람할 수 있고, &quot;공개&quot;로 전환한
-                자료는 자료실 페이지에서 누구나 내려받을 수 있습니다.
+                PPT·PDF 등 강의 자료를 올려두고 관리합니다. 목록은 자료실 페이지에서 누구나 볼 수 있고,
+                &quot;공개&quot;로 전환한 자료만 실제로 내려받을 수 있습니다.
             </p>
 
             {/* 업로드 폼 */}

@@ -125,10 +125,11 @@ drop policy if exists "resources admin all" on public.resources;
 create policy "resources admin all" on public.resources for all
   to authenticated using (true) with check (true);
 
--- 공개 자료(is_public = true)는 로그인 없이도 조회 가능
+-- 목록(제목·설명 등)은 누구나 조회 가능. 실제 파일 다운로드는 is_public = true인 것만 —
+-- storage.objects의 "resources bucket public read" 정책에서 별도로 강제한다.
 drop policy if exists "resources public read" on public.resources;
 create policy "resources public read" on public.resources for select
-  to public using (is_public = true);
+  to public using (true);
 
 -- 비공개 버킷 (public: false) → 서명 URL로만 다운로드
 insert into storage.buckets (id, name, public)
