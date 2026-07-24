@@ -6,15 +6,8 @@ import { Spinner } from "../../../_components/spinner";
 import type { ScheduleItem } from "../_actions/schedules";
 import { useCreateSchedule, useDeleteSchedule, useSchedules, useUpdateSchedule } from "../_hooks/schedules";
 import { useSubscribePush, useUnsubscribePush } from "../_hooks/push";
-import { toISO, fmtSelected, buildGrid, shiftMonth, MonthGrid } from "../_lib/shared";
+import { toISO, fmtSelected, buildGrid, shiftMonth, reminderIsoFor, MonthGrid } from "../_lib/shared";
 import { urlBase64ToUint8Array, subscriptionToInput } from "../_lib/push";
-
-// 알림은 시간 선택 없이 고정 — 일정 날짜의 당일 오전 8시.
-const REMINDER_HOUR = 8;
-
-function reminderIsoFor(date: string): string {
-    return new Date(`${date}T${String(REMINDER_HOUR).padStart(2, "0")}:00:00`).toISOString();
-}
 
 // 오늘 기준 앞뒤로 이 만큼의 개월을 이어붙여 스크롤로 넘길 수 있게 한다.
 const MONTHS_BEFORE = 6;
@@ -61,7 +54,7 @@ export default function CalendarAppPage() {
 
     const [editing, setEditing] = useState<ScheduleItem | null>(null);
     const [title, setTitle] = useState("");
-    const [remindEnabled, setRemindEnabled] = useState(false);
+    const [remindEnabled, setRemindEnabled] = useState(true);
     const create = useCreateSchedule();
     const update = useUpdateSchedule();
     const del = useDeleteSchedule();
@@ -69,7 +62,7 @@ export default function CalendarAppPage() {
     function startCreate() {
         setEditing(null);
         setTitle("");
-        setRemindEnabled(false);
+        setRemindEnabled(true);
     }
 
     function startEdit(s: ScheduleItem) {
@@ -279,7 +272,7 @@ export default function CalendarAppPage() {
                                     value={title}
                                     onChange={(e) => setTitle(e.target.value)}
                                     placeholder="일정내용"
-                                    className="w-full rounded-[14px] border  border-ink/25 bg-white px-4 py-2.5 text-[14px] text-ink outline-none placeholder:text-dust focus:border-ink/60"
+                                    className="w-full rounded-[14px] border  border-ink/25 bg-white px-4 py-2.5 text-[16px] text-ink outline-none placeholder:text-dust focus:border-ink/60"
                                 />
                                 <button
                                     onClick={() => setRemindEnabled((v) => !v)}

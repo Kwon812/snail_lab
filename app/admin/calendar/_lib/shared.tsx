@@ -18,6 +18,13 @@ export function toISO(d: Date): string {
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
+// 알림은 시간 선택 없이 고정 — 일정 날짜의 당일 오전 8시.
+export const REMINDER_HOUR = 8;
+
+export function reminderIsoFor(date: string): string {
+    return new Date(`${date}T${String(REMINDER_HOUR).padStart(2, "0")}:00:00`).toISOString();
+}
+
 /** base 월에서 offset개월만큼 이동한 { year, month }. */
 export function shiftMonth(base: Date, offset: number): { year: number; month: number } {
     const d = new Date(base.getFullYear(), base.getMonth() + offset, 1);

@@ -25,10 +25,38 @@ function useInvalidateSchedules() {
 }
 
 export function useCreateSchedule() {
+  const qc = useQueryClient();
   const invalidate = useInvalidateSchedules();
   return useMutation({
     mutationFn: (input: ScheduleInput) => createSchedule(input),
-    onSuccess: invalidate,
+    onMutate: async (input) => {
+      await qc.cancelQueries({ queryKey: ["schedules"] });
+      const previous = qc.getQueriesData<ScheduleItem[]>({ queryKey: ["schedules"] });
+
+      const optimisticItem: ScheduleItem = {
+        id: `optimistic-${Date.now()}`,
+        date: input.date,
+        title: input.title,
+        memo: input.memo || null,
+        remind_at: input.remindAt ?? null,
+        created_at: new Date().toISOString(),
+      };
+
+      // 이 날짜가 실제로 포함된 range 캐시에만 낙관적으로 끼워 넣는다.
+      for (const [key] of previous) {
+        const [, from, to] = key as [string, string, string];
+        if (input.date < from || input.date > to) continue;
+        qc.setQueryData<ScheduleItem[]>(key, (old) =>
+          old ? [...old, optimisticItem].sort((a, b) => a.date.localeCompare(b.date)) : old,
+        );
+      }
+
+      return { previous };
+    },
+    onError: (_err, _input, context) => {
+      context?.previous.forEach(([key, data]) => qc.setQueryData(key, data));
+    },
+    onSettled: invalidate,
   });
 }
 

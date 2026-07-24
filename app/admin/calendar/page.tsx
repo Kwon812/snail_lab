@@ -11,7 +11,7 @@ import {
     useSchedules,
     useUpdateSchedule,
 } from "./_hooks/schedules";
-import { WEEKDAYS, CHIP_STYLES, toISO, fmtSelected, buildWeek, buildGrid, MonthGrid } from "./_lib/shared";
+import { WEEKDAYS, CHIP_STYLES, toISO, fmtSelected, buildWeek, buildGrid, reminderIsoFor, MonthGrid } from "./_lib/shared";
 
 export default function CalendarPage() {
     const today = useMemo(() => new Date(), []);
@@ -86,6 +86,7 @@ export default function CalendarPage() {
     const [editing, setEditing] = useState<ScheduleItem | null>(null);
     const [title, setTitle] = useState("");
     const [memo, setMemo] = useState("");
+    const [remindEnabled, setRemindEnabled] = useState(true);
     const create = useCreateSchedule();
     const update = useUpdateSchedule();
     const del = useDeleteSchedule();
@@ -95,24 +96,27 @@ export default function CalendarPage() {
         setEditing(null);
         setTitle("");
         setMemo("");
+        setRemindEnabled(true);
     }
 
     function startEdit(s: ScheduleItem) {
         setEditing(s);
         setTitle(s.title);
         setMemo(s.memo ?? "");
+        setRemindEnabled(!!s.remind_at);
     }
 
     async function onSubmit() {
         if (!title.trim()) return;
         try {
+            const remindAt = remindEnabled ? reminderIsoFor(selected) : null;
             if (editing) {
                 await update.mutateAsync({
                     id: editing.id,
-                    input: { date: selected, title: title.trim(), memo: memo.trim() },
+                    input: { date: selected, title: title.trim(), memo: memo.trim(), remindAt },
                 });
             } else {
-                await create.mutateAsync({ date: selected, title: title.trim(), memo: memo.trim() });
+                await create.mutateAsync({ date: selected, title: title.trim(), memo: memo.trim(), remindAt });
             }
             startCreate();
         } catch (err) {
@@ -304,6 +308,9 @@ export default function CalendarPage() {
                                             <p className="text-[15px] font-semibold leading-snug text-ink">{e.title}</p>
                                             {e.memo &&
                                                 <p className="mt-1 text-[13px] leading-snug text-slate">{e.memo}</p>}
+                                            {e.remind_at && (
+                                                <p className="mt-1 text-[12px] font-medium text-signal">🔔 당일 오전 8시 알림</p>
+                                            )}
                                         </div>
                                         <div className="flex shrink-0 gap-1">
                                             <button
@@ -353,6 +360,15 @@ export default function CalendarPage() {
                                 rows={3}
                                 className="w-full rounded-[14px] border border-ink/25 bg-white px-4 py-2.5 text-[14px] text-ink outline-none placeholder:text-dust focus:border-ink/60"
                             />
+                            <button
+                                onClick={() => setRemindEnabled((v) => !v)}
+                                className={`flex items-center justify-between rounded-[14px] border px-4 py-2.5 text-[14px] font-medium transition-colors ${
+                                    remindEnabled ? "border-transparent bg-signal text-cream" : "border-ink/25 bg-white text-ink"
+                                }`}
+                            >
+                                <span>🔔 당일 오전 8시 알림</span>
+                                <span className="text-[12px]">{remindEnabled ? "켜짐" : "꺼짐"}</span>
+                            </button>
                             <div className="flex gap-2">
                                 <button
                                     onClick={onSubmit}
