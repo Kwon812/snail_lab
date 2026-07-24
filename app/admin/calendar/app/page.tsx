@@ -267,7 +267,6 @@ export default function CalendarAppPage() {
                             <h4 className="text-[15px] font-semibold text-ink">{editing ? "일정 수정" : "일정 추가"}</h4>
                             <div className="mt-3 flex flex-col gap-3">
                                 <textarea
-                                    autoFocus
                                     rows={2}
                                     value={title}
                                     onChange={(e) => setTitle(e.target.value)}
