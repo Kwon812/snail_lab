@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
 
   for (const schedule of due) {
     const payload = JSON.stringify({
-      title: "일정 알림",
+      title: "오늘 수업",
       body: schedule.title,
       url: "/admin/calendar/app",
     });

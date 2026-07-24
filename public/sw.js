@@ -9,7 +9,7 @@ self.addEventListener("activate", (event) => {
 });
 
 self.addEventListener("push", (event) => {
-  let payload = { title: "일정 알림", body: "", url: "/admin/calendar/app" };
+  let payload = { title: "오늘 수업", body: "", url: "/admin/calendar/app" };
   try {
     if (event.data) payload = { ...payload, ...event.data.json() };
   } catch {
