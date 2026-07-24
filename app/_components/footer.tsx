@@ -1,5 +1,7 @@
+"use client";
+
 import Link from "next/link";
-import { Arrow } from "./ui";
+import { usePathname } from "next/navigation";
 
 const COLS = [
   {
@@ -24,6 +26,11 @@ const COLS = [
 const SOCIAL = ["Instagram", "YouTube", "LinkedIn", "카카오톡"];
 
 export function Footer() {
+  const pathname = usePathname();
+
+  // 앱 전용 캘린더 화면(추후 PWA)은 마케팅 footer 없이 단독 화면으로 보여준다.
+  if (pathname?.startsWith("/admin/calendar/app")) return null;
+
   return (
     <footer className="mt-24 bg-ink px-6 pb-24 pt-20 text-cream sm:px-10 sm:pt-24">
       <div className="mx-auto w-full max-w-[1280px]">

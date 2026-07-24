@@ -18,6 +18,9 @@ export function Nav() {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
 
+  // 앱 전용 캘린더 화면(추후 PWA)은 마케팅 nav 없이 단독 화면으로 보여준다.
+  if (pathname?.startsWith("/admin/calendar/app")) return null;
+
   return (
     <div className="pointer-events-none fixed inset-x-0 top-6 z-50 px-4 sm:px-8">
       <nav className="pointer-events-auto mx-auto flex w-full max-w-[1180px] items-center justify-between rounded-pill bg-white/90 px-2 py-2 shadow-pill backdrop-blur-md sm:px-6">

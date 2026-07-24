@@ -27,6 +27,12 @@ const actions = [
     desc: "PPT·PDF·HWP 등 강의 자료를 올리고 관리합니다. 관리자만 열람·다운로드.",
     tone: { a: "#ef8a4c", b: "#9a3a0a" },
   },
+  {
+    href: "/admin/calendar",
+    label: "일정",
+    desc: "출강·연수·개인 일정을 달력으로 관리합니다. 관리자만 열람.",
+    tone: { a: "#f4a15e", b: "#a83d1a" },
+  },
 ];
 
 export default async function AdminHome() {

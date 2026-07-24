@@ -152,3 +152,52 @@ create policy "resources bucket public read" on storage.objects
       where r.path = storage.objects.name and r.is_public = true
     )
   );
+
+-- ------------------------------------------------------------------
+--  강사 일정 (관리자 전용): schedules 테이블
+--  읽기·쓰기 모두 로그인한 관리자(authenticated)만. 공개 페이지 없음.
+-- ------------------------------------------------------------------
+create table if not exists public.schedules (
+  id          uuid primary key default gen_random_uuid(),
+  date        date not null,
+  title       text not null,
+  memo        text,
+  created_at  timestamptz not null default now(),
+  updated_at  timestamptz not null default now()
+);
+
+create index if not exists schedules_date_idx on public.schedules (date);
+
+drop trigger if exists schedules_set_updated_at on public.schedules;
+create trigger schedules_set_updated_at
+  before update on public.schedules
+  for each row execute function public.set_updated_at();
+
+alter table public.schedules enable row level security;
+drop policy if exists "schedules admin all" on public.schedules;
+create policy "schedules admin all" on public.schedules for all
+  to authenticated using (true) with check (true);
+
+-- 일정 알림(PWA 푸시): remind_at 시각에 크론이 remind_sent=false인 행을 찾아 발송하고 true로 표시
+alter table public.schedules add column if not exists remind_at timestamptz;
+alter table public.schedules add column if not exists remind_sent boolean not null default false;
+
+create index if not exists schedules_remind_at_idx
+  on public.schedules (remind_at)
+  where remind_at is not null and remind_sent = false;
+
+-- ------------------------------------------------------------------
+--  push_subscriptions (관리자 전용): 모바일 PWA의 웹 푸시 구독 정보
+-- ------------------------------------------------------------------
+create table if not exists public.push_subscriptions (
+  id          uuid primary key default gen_random_uuid(),
+  endpoint    text unique not null,
+  p256dh      text not null,
+  auth        text not null,
+  created_at  timestamptz not null default now()
+);
+
+alter table public.push_subscriptions enable row level security;
+drop policy if exists "push_subscriptions admin all" on public.push_subscriptions;
+create policy "push_subscriptions admin all" on public.push_subscriptions for all
+  to authenticated using (true) with check (true);
