@@ -7,6 +7,7 @@
 갤럭시 앱([snail_lab_app](https://github.com/snailbooklab/snail_lab_app))과 하나의 Supabase를 공유합니다.
 
 ---
+ 
 
 ## 이 프로젝트가 푸는 문제
 
