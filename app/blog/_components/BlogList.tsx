@@ -28,7 +28,7 @@ export function BlogList({ posts }: { posts: PublicPostCard[] }) {
         <NewPostButton />
       </div>
       <h1 className="display mt-6 max-w-[20ch] text-[40px] leading-[1.02] sm:text-[60px]">
-        아이와 나눌 이야기.
+        강의 현장 기록.
       </h1>
 
       {/* Search + filter row */}

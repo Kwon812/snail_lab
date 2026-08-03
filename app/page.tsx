@@ -19,7 +19,7 @@ export default async function Home() {
                     <div>
                         <Eyebrow>미디어 리터러시 · 그림책 · 아동심리 강사</Eyebrow>
                         <h1 className="display mt-6 max-w-[15ch] text-[42px] leading-[1.02] sm:text-[64px]">
-                            <span className="text-signal-light">그림책</span>을 품다, <br/> &nbsp;&nbsp; &nbsp; <span className="text-signal-light">미디어</span>로 담다.
+                            <span className="text-signal-light">그림책</span>을 품다, <br/> &nbsp;&nbsp; &nbsp; <span className="text-signal-light">미디어</span>로 잇다.
                         </h1>
                         <p className="mt-7 max-w-[46ch] text-[18px] leading-[1.55] text-slate">
                             아이의 순수한 시선부터 어르신의 삶의 지혜까지.<br/>그림책으로 시작해 미디어로 완성되는 세대공감 플랫폼.
@@ -89,9 +89,7 @@ export default async function Home() {
             <Section className="pt-28 sm:pt-40">
                 <Reveal>
                     <Eyebrow>강의 분야</Eyebrow>
-                    <h2 className="display mt-5 text-[34px] leading-[1.05] sm:text-[46px]">
-                        아이를 이해하는 세 가지 길.
-                    </h2>
+
                     <p className="mt-4 text-[17px] leading-[1.5] text-slate">
                         세 가지 축으로 아이와 미디어, 그리고 마음을 다룹니다. 카드를 눌러 커리큘럼을 확인하세요.
                     </p>
@@ -110,6 +108,7 @@ export default async function Home() {
                                 i % 2 === 1 ? "lg:mt-16" : ""
                             }`}
                         >
+                            <div className="relative">
                             <Portrait className={'bg-orange-500'} href={`/lectures?field=${encodeURIComponent(f.title)}`} toneA={f.tone.a} toneB={f.tone.b} size={230}
                                       lift>
                                 {/* 흰줄 벡터 아이콘 — 원 위에 겹치게 */}
@@ -128,6 +127,17 @@ export default async function Home() {
                                 {/*    }}*/}
                                 {/*/>*/}
                             </Portrait>
+                            {/* 새끼친 하위 분야 — 본 원 곁에 붙는 조그마한 위성 원 */}
+                            {"sub" in f && (
+                                <Link
+                                    href={`/lectures?field=${encodeURIComponent(f.sub.title)}`}
+                                    className="absolute -right-7 -top-2 grid h-[84px] w-[84px] place-items-center rounded-full text-[14px] font-medium text-white shadow-[0_10px_24px_rgba(0,0,0,0.14)] transition-transform duration-300 ease-out hover:-translate-y-1.5 hover:shadow-[0_18px_36px_rgba(0,0,0,0.18)]"
+                                    style={{background: `radial-gradient(circle at 35% 30%, ${f.sub.tone.a}, ${f.sub.tone.b})`}}
+                                >
+                                    {f.sub.title}
+                                </Link>
+                            )}
+                            </div>
                             <div className="mt-10">
                 <span className="display text-[15px] tabular-nums text-signal-light">
                   {`0${i + 1}`}
