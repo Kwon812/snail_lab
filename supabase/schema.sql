@@ -375,3 +375,74 @@
         alter publication supabase_realtime add table public.notification_events;
       end if;
     end $$;
+
+    -- ------------------------------------------------------------------
+    --  google_oauth_connection (관리자 전용, 싱글턴 1행): 강의평가 설문지를 구글 폼으로
+    --  만들기 위해 연동한 관리자 구글 계정의 refresh_token을 저장한다.
+    --
+    --  흐름: 관리자가 /admin/course-evaluation에서 "구글 계정 연동" 클릭
+    --        → /api/google/oauth/start가 구글 동의화면으로 보냄
+    --        → /api/google/oauth/callback이 code를 refresh_token으로 교환해 이 행에 upsert.
+    --  이후 설문지 생성 시 이 refresh_token으로 access_token을 새로 발급받아 Forms API를 호출한다.
+    --
+    --  RLS: anon 정책 없음(기본 거부) — 로그인한 관리자(authenticated)만 읽고 쓸 수 있다.
+    -- ------------------------------------------------------------------
+    create table if not exists public.google_oauth_connection (
+      id            integer primary key default 1,
+      email         text,
+      refresh_token text not null,
+      scope         text,
+      created_at    timestamptz not null default now(),
+      updated_at    timestamptz not null default now(),
+      constraint google_oauth_connection_singleton check (id = 1)
+    );
+
+    drop trigger if exists google_oauth_connection_set_updated_at on public.google_oauth_connection;
+    create trigger google_oauth_connection_set_updated_at
+      before update on public.google_oauth_connection
+      for each row execute function public.set_updated_at();
+
+    alter table public.google_oauth_connection enable row level security;
+    drop policy if exists "google_oauth_connection admin all" on public.google_oauth_connection;
+    create policy "google_oauth_connection admin all" on public.google_oauth_connection for all
+      to authenticated using (true) with check (true);
+
+    -- ------------------------------------------------------------------
+    --  course_evaluations (강의평가): 관리자가 /admin/course-evaluation에서 문항을 만들면
+    --  서버가 Google Forms API로 실제 폼을 생성하고, 여기엔 그 결과(formId·응답 링크)만 저장한다.
+    --  questions는 감사·재사용 목적의 스냅샷일 뿐 폼의 실제 진실은 구글 쪽에 있다.
+    --
+    --  status는 우리 쪽 목록 노출 여부만 제어한다(PUBLISHED만 /evaluation 공개 페이지에 노출) —
+    --  구글 폼 자체의 응답 수집 여부는 건드리지 않는다.
+    -- ------------------------------------------------------------------
+    create table if not exists public.course_evaluations (
+      id             uuid primary key default gen_random_uuid(),
+      lecture_id     uuid references public.lectures(id) on delete set null,
+      title          text not null,
+      description    text,
+      questions      jsonb not null default '[]',
+      google_form_id text not null,
+      form_url       text not null,          -- 응답용 링크(responderUri)
+      edit_url       text not null,          -- 관리자 편집 링크(docs.google.com/.../edit)
+      status         text not null default 'PUBLISHED', -- PUBLISHED | CLOSED
+      created_at     timestamptz not null default now(),
+      updated_at     timestamptz not null default now()
+    );
+
+    create index if not exists course_evaluations_lecture_idx
+      on public.course_evaluations (lecture_id);
+    create index if not exists course_evaluations_status_created_idx
+      on public.course_evaluations (status, created_at desc);
+
+    drop trigger if exists course_evaluations_set_updated_at on public.course_evaluations;
+    create trigger course_evaluations_set_updated_at
+      before update on public.course_evaluations
+      for each row execute function public.set_updated_at();
+
+    alter table public.course_evaluations enable row level security;
+    drop policy if exists "course_evaluations admin all" on public.course_evaluations;
+    create policy "course_evaluations admin all" on public.course_evaluations for all
+      to authenticated using (true) with check (true);
+    drop policy if exists "course_evaluations public read" on public.course_evaluations;
+    create policy "course_evaluations public read" on public.course_evaluations for select
+      to public using (status = 'PUBLISHED');

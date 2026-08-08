@@ -46,6 +46,12 @@ const actions = [
     desc: "수강생을 사전 등록하고, 본인인증 후 발급된 OpenAI API 키 상태를 관리합니다.",
     tone: { a: "#f6a55b", b: "#c04310" },
   },
+  {
+    href: "/admin/course-evaluation",
+    label: "강의 설문지 작성",
+    desc: "문항을 만들면 구글 폼이 자동 생성되고, 응답 링크가 강의평가 탭에 노출됩니다.",
+    tone: { a: "#f0a05e", b: "#a13716" },
+  },
 ];
 
 export default async function AdminHome() {
