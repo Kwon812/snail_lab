@@ -155,7 +155,17 @@ export default function VibeCodingAdminPage() {
                           : s.status === "ISSUING"
                             ? `"${s.name}"의 발급이 처리중에 멈춰 있습니다. 상태를 초기화하고 다시 본인인증할 수 있게 할까요?`
                             : `"${s.name}"의 이번 주차를 마감할까요? 지금 프로젝트를 폐기하고, 다음 주차엔 본인인증 페이지에서 새로 발급받게 됩니다.`;
-                      if (confirm(msg)) reset.mutate(s.id);
+                      if (confirm(msg)) {
+                        reset.mutate(s.id, {
+                          onSuccess: (result) => {
+                            if (result.revokeFailed) {
+                              alert(
+                                `"${s.name}"의 기존 OpenAI 키 폐기에 실패했습니다 — 이전 키가 아직 살아있을 수 있으니 OpenAI 대시보드에서 직접 확인해 주세요.`,
+                              );
+                            }
+                          },
+                        });
+                      }
                     }}
                     disabled={reset.isPending}
                     className="shrink-0 rounded-pill border border-ink/15 bg-white px-4 py-1.5 text-[13px] font-medium text-ink transition-colors hover:border-ink/40 disabled:opacity-50"
@@ -175,7 +185,17 @@ export default function VibeCodingAdminPage() {
                       s.status === "PENDING"
                         ? `"${s.name}" 등록 정보를 삭제할까요?`
                         : `"${s.name}" 등록 정보를 삭제할까요? 발급된 OpenAI 프로젝트도 함께 폐기됩니다.`;
-                    if (confirm(msg)) del.mutate(s.id);
+                    if (confirm(msg)) {
+                      del.mutate(s.id, {
+                        onSuccess: (result) => {
+                          if (result.revokeFailed) {
+                            alert(
+                              `"${s.name}" 등록 정보는 삭제했지만 OpenAI 키 폐기에 실패했습니다 — 이전 키가 아직 살아있을 수 있으니 OpenAI 대시보드에서 직접 확인해 주세요.`,
+                            );
+                          }
+                        },
+                      });
+                    }
                   }}
                   disabled={del.isPending}
                   className="shrink-0 rounded-pill px-3 py-1.5 text-[13px] font-medium text-slate transition-colors hover:text-signal disabled:opacity-50"

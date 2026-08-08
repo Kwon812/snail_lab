@@ -53,6 +53,37 @@ export async function archiveOpenAIProject(projectId: string): Promise<void> {
   await adminFetch(`/organization/projects/${projectId}/archive`, { method: "POST" });
 }
 
+/**
+ * Service Account를 지운다. Service Account 소속 API 키는 일반 API 키 삭제 엔드포인트로
+ * 지울 수 없고(OpenAI가 에러로 거절함) 반드시 이 엔드포인트로 service account 자체를
+ * 지워야 한다 — 학생 키를 실제로 죽이는 데 꼭 필요한 호출.
+ */
+export async function deleteProjectServiceAccount(projectId: string, serviceAccountId: string): Promise<void> {
+  await adminFetch(`/organization/projects/${projectId}/service_accounts/${serviceAccountId}`, {
+    method: "DELETE",
+  });
+}
+
+/**
+ * 학생 키를 실제로 무효화한다 — 프로젝트를 archive하는 것만으론 부족하다. Service Account
+ * 소속 키는 일반 API 키 삭제 엔드포인트로 못 지우고 service account 자체를 지워야만 하고,
+ * 게다가 archive는 "이미 archive된 프로젝트에선 하위 리소스를 못 건드릴 수 있다"는 보고가
+ * 있어서, 순서가 중요하다: ① service account를 먼저 지운다(실패하면 이 함수가 던진다 —
+ * 호출부는 "키가 아직 살아있을 수 있다"고 관리자에게 경고해야 한다) ② 그다음 프로젝트를
+ * archive한다(조직 정리용 — 이건 실패해도 키 자체엔 영향 없으니 조용히 무시한다).
+ *
+ * 다만 OpenAI 커뮤니티에는 "키를 지워도/archive해도 한동안(길게는 몇 시간) 계속 동작한다"는
+ * 보고가 다수 있다 — OpenAI 쪽 인증 캐시 전파 지연으로 보이는 알려진 이슈라, 이 함수가
+ * 성공해도 "즉시" 반영을 우리가 보장할 순 없다. 그래서 발급 시 요청 속도 상한(RPM/TPM)과
+ * 예산 감시 크론을 같이 걸어둔 것 — 이 지연 구간에서 실제로 새는 비용을 줄여주는 역할이다.
+ */
+export async function revokeOpenAIAccess(projectId: string, serviceAccountId: string | null): Promise<void> {
+  if (serviceAccountId) {
+    await deleteProjectServiceAccount(projectId, serviceAccountId);
+  }
+  await archiveOpenAIProject(projectId).catch(() => {});
+}
+
 export type OpenAIServiceAccount = {
   id: string;
   object: string;

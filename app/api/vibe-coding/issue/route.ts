@@ -7,6 +7,7 @@ import {
   applyProjectRateLimits,
   createOpenAIProject,
   createProjectServiceAccount,
+  revokeOpenAIAccess,
 } from "../../../_lib/openai-admin";
 
 export const dynamic = "force-dynamic";
@@ -148,7 +149,9 @@ export async function POST(request: NextRequest) {
     .eq("id", student.id);
 
   if (finalizeError) {
-    await archiveOpenAIProject(project.id).catch(() => {});
+    // 이 시점엔 이미 살아있는 키가 만들어져 있었는데 DB 기록에 실패한 것이므로, 프로젝트만
+    // archive하는 게 아니라 service account 자체를 지워서 그 키를 실제로 무효화한다.
+    await revokeOpenAIAccess(project.id, serviceAccount.id).catch(() => {});
     return NextResponse.json({ error: finalizeError.message }, { status: 500 });
   }
 

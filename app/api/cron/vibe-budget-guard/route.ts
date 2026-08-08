@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "../../../_lib/supabase-admin";
-import { archiveOpenAIProject, getProjectCostUSD } from "../../../_lib/openai-admin";
+import { getProjectCostUSD, revokeOpenAIAccess } from "../../../_lib/openai-admin";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 /**
  * 바이브 코딩 예산 감시 — 발급된 프로젝트별 누적 지출이 OPENAI_PROJECT_BUDGET_KRW를 넘으면
- * OpenAI 프로젝트를 archive(키 즉시 무효화)하고 status를 BLOCKED로 바꾼다.
+ * OpenAI 키(service account)를 지우고 프로젝트를 archive한 뒤 status를 BLOCKED로 바꾼다.
  *
  * OpenAI Admin API엔 프로젝트별 "금액" 한도를 설정하는 엔드포인트가 없어서(대시보드 전용),
  * 이 크론이 Costs API를 주기적으로 조회해 대신 강제한다. Vercel Hobby 플랜은 크론이 하루 1회로
@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
   const supabase = supabaseAdmin();
   const { data: students, error } = await supabase
     .from("vibe_students")
-    .select("id, name, openai_project_id, issued_at")
+    .select("id, name, openai_project_id, openai_service_account_id, issued_at")
     .eq("status", "ISSUED")
     .not("openai_project_id", "is", null);
 
@@ -60,11 +60,11 @@ export async function GET(request: NextRequest) {
         continue;
       }
 
-      // archive가 실패하면 여기서 던져서 catch로 빠진다 — DB를 BLOCKED로 바꾸지 않고
-      // status를 ISSUED로 남겨둬서 다음 주기에 다시 시도하게 한다. archive 성공을 확인하기
-      // 전엔 절대 BLOCKED로 표시하지 않는다(그렇지 않으면 실제로는 살아있는 프로젝트를
-      // "차단됨"으로 잘못 보여주게 된다).
-      await archiveOpenAIProject(student.openai_project_id!);
+      // 키 삭제가 실패하면 여기서 던져서 catch로 빠진다 — DB를 BLOCKED로 바꾸지 않고
+      // status를 ISSUED로 남겨둬서 다음 주기에 다시 시도하게 한다. 실제로 키를 지우는 데
+      // 성공했다고 확인되기 전엔 절대 BLOCKED로 표시하지 않는다(그렇지 않으면 실제로는
+      // 살아있는 키를 "차단됨"으로 잘못 보여주게 된다).
+      await revokeOpenAIAccess(student.openai_project_id!, student.openai_service_account_id);
       const { error: updateError } = await supabase
         .from("vibe_students")
         .update({ status: "BLOCKED", budget_blocked_at: new Date().toISOString() })
