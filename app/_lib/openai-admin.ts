@@ -33,6 +33,26 @@ async function adminFetch<T>(path: string, init?: RequestInit): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+/**
+ * 지우기/archive 같은 멱등이어야 할 작업 전용 — 대상이 이미 없으면(404) 이미 목표 상태에
+ * 도달한 것이므로 성공으로 취급한다. 예: 예산 감시 크론이 이미 지운 service account를
+ * 관리자가 "재발급 허용"으로 한 번 더 지우려 할 때, 그냥 없는 걸 없다고 확인하는 것뿐이라
+ * 에러가 아니다.
+ */
+async function adminFetchIdempotent(path: string, init: RequestInit): Promise<void> {
+  const res = await fetch(`${OPENAI_API_BASE}${path}`, {
+    ...init,
+    headers: {
+      Authorization: `Bearer ${adminKey()}`,
+      "Content-Type": "application/json",
+      ...init.headers,
+    },
+  });
+  if (res.ok || res.status === 404) return;
+  const body = await res.text().catch(() => "");
+  throw new Error(`OpenAI Admin API 오류 (${res.status}): ${body || res.statusText}`);
+}
+
 export type OpenAIProject = {
   id: string;
   object: "organization.project";
@@ -49,17 +69,20 @@ export async function createOpenAIProject(name: string): Promise<OpenAIProject> 
   });
 }
 
+/** 이미 archive된(또는 존재하지 않는) 프로젝트를 다시 archive해도 에러가 아니다 — 멱등 처리. */
 export async function archiveOpenAIProject(projectId: string): Promise<void> {
-  await adminFetch(`/organization/projects/${projectId}/archive`, { method: "POST" });
+  await adminFetchIdempotent(`/organization/projects/${projectId}/archive`, { method: "POST" });
 }
 
 /**
  * Service Account를 지운다. Service Account 소속 API 키는 일반 API 키 삭제 엔드포인트로
  * 지울 수 없고(OpenAI가 에러로 거절함) 반드시 이 엔드포인트로 service account 자체를
- * 지워야 한다 — 학생 키를 실제로 죽이는 데 꼭 필요한 호출.
+ * 지워야 한다 — 학생 키를 실제로 죽이는 데 꼭 필요한 호출. 이미 지워진 service account를
+ * 또 지우려 해도 에러가 아니다(멱등 처리) — 예산 크론이 먼저 지운 뒤 관리자가 "재발급 허용"을
+ * 눌러도 "이미 없음"을 실패로 오인해 경고를 띄우지 않는다.
  */
 export async function deleteProjectServiceAccount(projectId: string, serviceAccountId: string): Promise<void> {
-  await adminFetch(`/organization/projects/${projectId}/service_accounts/${serviceAccountId}`, {
+  await adminFetchIdempotent(`/organization/projects/${projectId}/service_accounts/${serviceAccountId}`, {
     method: "DELETE",
   });
 }
