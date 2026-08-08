@@ -226,7 +226,10 @@
       name                       text not null,
       phone                      text not null,                    -- 숫자만 정규화해 저장(01012345678)
       course_id                  text not null,                    -- 과정명(자유 입력)
-      status                     text not null default 'PENDING',  -- PENDING | ISSUED | BLOCKED
+      status                     text not null default 'PENDING',  -- PENDING | ISSUING | ISSUED | BLOCKED
+      -- ISSUING은 발급 라우트가 OpenAI를 호출하는 동안만 잠깐 거치는 상태(동시 요청 이중발급
+      -- 방지용 락). 정상 흐름이면 몇 초 안에 ISSUED나 PENDING으로 바뀐다 — 서버가 그 사이
+      -- 죽는 극단적인 경우에만 여기 멈출 수 있고, 그때는 관리자가 수동으로 초기화한다.
       openai_project_id          text,
       openai_service_account_id text,
       openai_api_key_id          text,                             -- 키 id만 저장(실제 키 값은 저장 안 함)

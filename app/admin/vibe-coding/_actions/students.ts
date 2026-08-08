@@ -9,7 +9,7 @@ export type VibeStudent = {
   name: string;
   phone: string;
   course_id: string;
-  status: "PENDING" | "ISSUED" | "BLOCKED";
+  status: "PENDING" | "ISSUING" | "ISSUED" | "BLOCKED";
   issued_at: string | null;
   budget_blocked_at: string | null;
   created_at: string;

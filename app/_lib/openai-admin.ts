@@ -156,7 +156,11 @@ export async function getProjectCostUSD(projectId: string, sinceUnixSeconds: num
     group_by: "project_id",
     limit: "31",
   });
-  const buckets = await adminFetch<CostsBucket[]>(`/organization/costs?${params.toString()}`);
+  // OpenAI의 다른 목록형 엔드포인트(rate_limits 등)와 동일하게 배열이 아니라 { data: [...] }로
+  // 감싸서 온다 — 예전엔 여기서 그냥 배열을 기대하다가 "is not iterable"로 매번 실패했었다.
+  const { data: buckets } = await adminFetch<{ data: CostsBucket[] }>(
+    `/organization/costs?${params.toString()}`,
+  );
 
   let total = 0;
   for (const bucket of buckets) {

@@ -123,10 +123,18 @@ export default function VibeCodingAdminPage() {
                       ? "bg-signal/10 text-signal"
                       : s.status === "BLOCKED"
                         ? "bg-red-100 text-red-700"
-                        : "bg-bone text-slate"
+                        : s.status === "ISSUING"
+                          ? "bg-amber-100 text-amber-700"
+                          : "bg-bone text-slate"
                   }`}
                 >
-                  {s.status === "ISSUED" ? "발급완료" : s.status === "BLOCKED" ? "예산초과 차단" : "대기중"}
+                  {s.status === "ISSUED"
+                    ? "발급완료"
+                    : s.status === "BLOCKED"
+                      ? "예산초과 차단"
+                      : s.status === "ISSUING"
+                        ? "발급 처리중"
+                        : "대기중"}
                 </span>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-[16px] font-medium text-ink">
@@ -138,13 +146,15 @@ export default function VibeCodingAdminPage() {
                     {s.budget_blocked_at ? ` · 차단 ${fmtDate(s.budget_blocked_at)}` : ""}
                   </p>
                 </div>
-                {(s.status === "ISSUED" || s.status === "BLOCKED") && (
+                {(s.status === "ISSUED" || s.status === "BLOCKED" || s.status === "ISSUING") && (
                   <button
                     onClick={() => {
                       const msg =
                         s.status === "BLOCKED"
                           ? `"${s.name}"은 예산 초과로 차단된 상태입니다. 재발급을 허용할까요?`
-                          : `"${s.name}"의 이번 주차를 마감할까요? 지금 프로젝트를 폐기하고, 다음 주차엔 본인인증 페이지에서 새로 발급받게 됩니다.`;
+                          : s.status === "ISSUING"
+                            ? `"${s.name}"의 발급이 처리중에 멈춰 있습니다. 상태를 초기화하고 다시 본인인증할 수 있게 할까요?`
+                            : `"${s.name}"의 이번 주차를 마감할까요? 지금 프로젝트를 폐기하고, 다음 주차엔 본인인증 페이지에서 새로 발급받게 됩니다.`;
                       if (confirm(msg)) reset.mutate(s.id);
                     }}
                     disabled={reset.isPending}
@@ -154,7 +164,9 @@ export default function VibeCodingAdminPage() {
                       ? "처리 중…"
                       : s.status === "BLOCKED"
                         ? "재발급 허용"
-                        : "주차 마감"}
+                        : s.status === "ISSUING"
+                          ? "초기화"
+                          : "주차 마감"}
                   </button>
                 )}
                 <button

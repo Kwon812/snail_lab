@@ -45,10 +45,18 @@ export function RecentVibeStudents() {
                   ? "bg-signal/10 text-signal"
                   : s.status === "BLOCKED"
                     ? "bg-red-100 text-red-700"
-                    : "bg-bone text-slate"
+                    : s.status === "ISSUING"
+                      ? "bg-amber-100 text-amber-700"
+                      : "bg-bone text-slate"
               }`}
             >
-              {s.status === "ISSUED" ? "발급완료" : s.status === "BLOCKED" ? "예산초과" : "대기중"}
+              {s.status === "ISSUED"
+                ? "발급완료"
+                : s.status === "BLOCKED"
+                  ? "예산초과"
+                  : s.status === "ISSUING"
+                    ? "처리중"
+                    : "대기중"}
             </span>
             <span className="truncate text-[16px] font-medium text-ink">{s.name}</span>
           </span>

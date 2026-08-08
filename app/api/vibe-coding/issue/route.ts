@@ -20,9 +20,13 @@ export const maxDuration = 60;
  * 이 조회 자체가 불가능하다. 이름·전화번호·과정명이 관리자가 등록해 둔 값과 정확히 일치해야만
  * 다음 단계로 진행된다.
  *
- * 순서: ① 대조 ② 이미 발급됐으면 거절 ③ Project 생성 ④ 요청 속도 상한 + 모델 허용목록
- *      적용(둘 다 best-effort) ⑤ Service Account(=API 키) 생성 ⑥ DB에 상태 반영(동시 요청
- *      이중 발급 방지) ⑦ 키를 응답으로 1회만 반환 — 이 값은 서버 어디에도 저장하지 않는다.
+ * 순서: ① 대조 ② 이미 발급됐거나 처리 중이면 거절 ③ status=PENDING → ISSUING 원자적 클레임
+ *      (동시 요청 중 단 하나만 성공 — 진 요청은 OpenAI를 아예 호출하지 않고 바로 끝난다)
+ *      ④ Project 생성 ⑤ 요청 속도 상한 + 모델 허용목록 적용(best-effort) ⑥ Service
+ *      Account(=API 키) 생성 ⑦ status=ISSUED로 확정 ⑧ 키를 응답으로 1회만 반환 — 이 값은
+ *      서버 어디에도 저장하지 않는다. ③~⑦ 사이 실패하면 항상 status를 PENDING으로 되돌려
+ *      재시도 가능하게 한다(예외로 죽어서 되돌리기 자체가 못 도는 경우엔 ISSUING에 멈춰 있을
+ *      수 있는데, 이때는 관리자가 /admin/vibe-coding에서 초기화하면 된다).
  */
 
 const BodySchema = z.object({
@@ -74,11 +78,41 @@ export async function POST(request: NextRequest) {
       { status: 403 },
     );
   }
+  if (student.status === "ISSUING") {
+    return NextResponse.json(
+      { error: "다른 요청으로 발급이 진행 중입니다. 잠시 후 다시 시도해 주세요." },
+      { status: 409 },
+    );
+  }
 
+  // 원자적 클레임: status=PENDING인 행만 ISSUING으로 바꾼다. 동시에 여러 요청이 들어와도
+  // Postgres 행 잠금 덕분에 단 하나만 성공하고, 진 요청들은 0행 갱신을 받아 여기서 바로
+  // 끝난다 — OpenAI 프로젝트를 만들기도 전에 걸러지므로 낭비되는 API 호출 자체가 없다.
+  const { data: claimed, error: claimError } = await supabase
+    .from("vibe_students")
+    .update({ status: "ISSUING" })
+    .eq("id", student.id)
+    .eq("status", "PENDING")
+    .select("id");
+
+  if (claimError) {
+    return NextResponse.json({ error: claimError.message }, { status: 500 });
+  }
+  if (!claimed || claimed.length === 0) {
+    return NextResponse.json(
+      { error: "다른 요청으로 발급이 진행 중입니다. 잠시 후 다시 시도해 주세요." },
+      { status: 409 },
+    );
+  }
+
+  // 이 지점부터는 이 요청이 유일한 소유자다. 실패하면 반드시 PENDING으로 되돌려 재시도를
+  // 허용한다 — 여기서 되돌리기 전에 서버가 통째로 죽는 극단적인 경우만 ISSUING에 멈추고,
+  // 그때는 관리자가 /admin/vibe-coding에서 초기화하면 된다.
   let project;
   try {
     project = await createOpenAIProject(`vibe-coding · ${name} · ${courseId}`.slice(0, 120));
   } catch (err) {
+    await supabase.from("vibe_students").update({ status: "PENDING" }).eq("id", student.id);
     return NextResponse.json({ error: `프로젝트 생성 실패: ${(err as Error).message}` }, { status: 502 });
   }
 
@@ -98,12 +132,11 @@ export async function POST(request: NextRequest) {
     serviceAccount = await createProjectServiceAccount(project.id, "student");
   } catch (err) {
     await archiveOpenAIProject(project.id).catch(() => {});
+    await supabase.from("vibe_students").update({ status: "PENDING" }).eq("id", student.id);
     return NextResponse.json({ error: `API 키 생성 실패: ${(err as Error).message}` }, { status: 502 });
   }
 
-  // status=PENDING 조건부 업데이트로 동시 요청 이중 발급을 막는다 — 갱신된 행이 없으면
-  // 그 사이 다른 요청이 먼저 발급을 마쳤다는 뜻이므로, 방금 만든 프로젝트는 폐기한다.
-  const { data: updated, error: updateError } = await supabase
+  const { error: finalizeError } = await supabase
     .from("vibe_students")
     .update({
       status: "ISSUED",
@@ -112,20 +145,11 @@ export async function POST(request: NextRequest) {
       openai_api_key_id: serviceAccount.api_key.id,
       issued_at: new Date().toISOString(),
     })
-    .eq("id", student.id)
-    .eq("status", "PENDING")
-    .select("id");
+    .eq("id", student.id);
 
-  if (updateError) {
+  if (finalizeError) {
     await archiveOpenAIProject(project.id).catch(() => {});
-    return NextResponse.json({ error: updateError.message }, { status: 500 });
-  }
-  if (!updated || updated.length === 0) {
-    await archiveOpenAIProject(project.id).catch(() => {});
-    return NextResponse.json(
-      { error: "이미 다른 요청으로 발급이 진행되었습니다. 잠시 후 다시 확인해 주세요." },
-      { status: 409 },
-    );
+    return NextResponse.json({ error: finalizeError.message }, { status: 500 });
   }
 
   return NextResponse.json({

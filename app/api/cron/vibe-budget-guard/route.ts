@@ -47,14 +47,18 @@ export async function GET(request: NextRequest) {
   }
 
   const blocked: string[] = [];
-  const failed: string[] = [];
+  const passed: { name: string; costUsd: number }[] = [];
+  const failed: { name: string; error: string }[] = [];
 
   for (const student of students ?? []) {
     // issued_at은 issue 라우트가 status를 ISSUED로 바꾸는 순간 항상 같이 채우므로 null일 수 없다.
     const sinceUnixSeconds = Math.floor(new Date(student.issued_at!).getTime() / 1000);
     try {
       const costUsd = await getProjectCostUSD(student.openai_project_id!, sinceUnixSeconds);
-      if (costUsd < budgetUsd) continue;
+      if (costUsd < budgetUsd) {
+        passed.push({ name: student.name, costUsd });
+        continue;
+      }
 
       // archive가 실패하면 여기서 던져서 catch로 빠진다 — DB를 BLOCKED로 바꾸지 않고
       // status를 ISSUED로 남겨둬서 다음 주기에 다시 시도하게 한다. archive 성공을 확인하기
@@ -68,8 +72,9 @@ export async function GET(request: NextRequest) {
         .eq("status", "ISSUED"); // 그 사이 관리자가 이미 재발급 허용했다면 덮어쓰지 않는다.
       if (updateError) throw new Error(updateError.message);
       blocked.push(student.name);
-    } catch {
-      failed.push(student.name);
+    } catch (err) {
+      // 실패 이유를 그대로 응답에 남긴다 — Render 로그만 보고도 원인을 바로 알 수 있게.
+      failed.push({ name: student.name, error: (err as Error).message });
     }
   }
 
@@ -77,6 +82,7 @@ export async function GET(request: NextRequest) {
     ok: true,
     checked: students?.length ?? 0,
     blocked,
+    passed,
     failed,
   });
 }
