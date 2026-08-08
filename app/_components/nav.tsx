@@ -62,18 +62,20 @@ export function Nav() {
                 </Link>
               );
             })}
-            <AdminOnly>
-              <Link
-                  key={'adminPage'}
-                  href={'/admin'}
-                  className={`text-[16px] font-medium tracking-[-0.02em] transition-colors ${
-                      pathname==='/admin' ? "text-ink" : "text-ink/55 hover:text-ink"
-                  }`}
-              >
-                관리자 페이지
-              </Link>
-            </AdminOnly>
           </div>
+
+          <AdminOnly>
+            <Link
+              href="/admin"
+              className={`hidden items-center gap-1.5 rounded-pill border px-4 py-1.5 text-[14px] font-medium tracking-[-0.02em] transition-colors lg:inline-flex ${
+                pathname === "/admin" || pathname.startsWith("/admin/")
+                  ? "border-ink bg-ink text-cream"
+                  : "border-ink/15 text-ink hover:border-ink/40"
+              }`}
+            >
+              관리자 페이지
+            </Link>
+          </AdminOnly>
 
           <Link
             href="/contact"
