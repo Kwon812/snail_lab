@@ -65,9 +65,18 @@ export async function GET(request: NextRequest) {
       // 성공했다고 확인되기 전엔 절대 BLOCKED로 표시하지 않는다(그렇지 않으면 실제로는
       // 살아있는 키를 "차단됨"으로 잘못 보여주게 된다).
       await revokeOpenAIAccess(student.openai_project_id!, student.openai_service_account_id);
+      // 이미 죽은 리소스의 id를 DB에 남겨두지 않는다 — "openai_project_id가 있으면 곧 지금
+      // 살아있는 발급"이라는 불변식을 지켜서 나중에 재발급 허용이 헛되이 재삭제를 시도할
+      // 일도 없게 한다(멱등 처리도 해뒀지만, 애초에 호출 자체가 안 나가는 게 더 깔끔하다).
       const { error: updateError } = await supabase
         .from("vibe_students")
-        .update({ status: "BLOCKED", budget_blocked_at: new Date().toISOString() })
+        .update({
+          status: "BLOCKED",
+          budget_blocked_at: new Date().toISOString(),
+          openai_project_id: null,
+          openai_service_account_id: null,
+          openai_api_key_id: null,
+        })
         .eq("id", student.id)
         .eq("status", "ISSUED"); // 그 사이 관리자가 이미 재발급 허용했다면 덮어쓰지 않는다.
       if (updateError) throw new Error(updateError.message);
