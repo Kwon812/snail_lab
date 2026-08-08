@@ -203,6 +203,56 @@
     end $$;
 
     -- ------------------------------------------------------------------
+    --  바이브 코딩 — 수강생 사전 등록 + OpenAI API 키 자동 발급
+    --
+    --  흐름: 관리자가 /admin/vibe-coding에서 이름·전화번호·과정명을 사전 등록 → 수강생이
+    --  /vibe-coding에서 같은 값으로 본인인증 → 서버(/api/vibe-coding/issue)가 service_role로
+    --  대조 후 OpenAI Project + 그 프로젝트 전용 Service Account(=API 키)를 발급한다.
+    --  키 값 자체는 절대 저장하지 않는다 — service_account/키 id만 남기고, 값은 발급 응답에서
+    --  단 한 번만 내려준다. 분실 시 관리자가 재발급을 허용(기존 프로젝트 archive + 상태 초기화)한다.
+    --
+    --  예산 감시: 프로젝트별 "금액" 한도는 OpenAI API로 설정할 수 없어(대시보드 전용),
+    --  /api/cron/vibe-budget-guard가 주기적으로 Costs API를 조회해 학생별 누적 지출이
+    --  OPENAI_PROJECT_BUDGET_KRW를 넘으면 프로젝트를 archive하고 status를 BLOCKED로 바꾼다.
+    --  BLOCKED는 PENDING과 달리 본인인증 페이지에서 스스로 재발급받을 수 없고, 관리자가
+    --  "재발급 허용"을 눌러야만 다시 PENDING으로 풀린다(예산 초과를 셀프 우회하지 못하게).
+    --
+    --  RLS: anon 정책을 아예 두지 않는다 = 기본 거부. 관리자 페이지는 로그인 세션(authenticated)
+    --  으로 CRUD하고, 본인인증·키 발급·예산 감시는 로그인 세션이 없는 호출이므로
+    --  supabaseAdmin()(service_role)으로 RLS를 우회해 서버에서만 처리한다.
+    -- ------------------------------------------------------------------
+    create table if not exists public.vibe_students (
+      id                         uuid primary key default gen_random_uuid(),
+      name                       text not null,
+      phone                      text not null,                    -- 숫자만 정규화해 저장(01012345678)
+      course_id                  text not null,                    -- 과정명(자유 입력)
+      status                     text not null default 'PENDING',  -- PENDING | ISSUED | BLOCKED
+      openai_project_id          text,
+      openai_service_account_id text,
+      openai_api_key_id          text,                             -- 키 id만 저장(실제 키 값은 저장 안 함)
+      issued_at                  timestamptz,
+      budget_blocked_at          timestamptz,                      -- 예산 감시 크론이 자동 차단한 시각
+      created_at                 timestamptz not null default now(),
+      updated_at                 timestamptz not null default now()
+    );
+
+    alter table public.vibe_students add column if not exists budget_blocked_at timestamptz;
+
+    create unique index if not exists vibe_students_identity_idx
+      on public.vibe_students (name, phone, course_id);
+
+    drop trigger if exists vibe_students_set_updated_at on public.vibe_students;
+    create trigger vibe_students_set_updated_at
+      before update on public.vibe_students
+      for each row execute function public.set_updated_at();
+
+    alter table public.vibe_students enable row level security;
+    drop policy if exists "vibe_students admin all" on public.vibe_students;
+    create policy "vibe_students admin all" on public.vibe_students for all
+      to authenticated using (true) with check (true);
+    -- anon용 정책은 의도적으로 없음 — select/insert/update/delete 전부 기본 거부.
+
+    -- ------------------------------------------------------------------
     --  expo_push_tokens (관리자 전용): 갤럭시 Expo 앱의 FCM 푸시 토큰.
     --  schedules가 바뀌면 /api/webhooks/schedule-changed가 이 토큰들로 "조용한" 푸시를 보내서
     --  앱을 깨우고, 앱은 그 신호로 로컬 알림(remind_at)을 다시 동기화한다. 실제 알람 표시는

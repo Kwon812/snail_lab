@@ -3,6 +3,7 @@ import { Arrow, Eyebrow, Section } from "../_components/ui";
 import { RecentPosts } from "./_components/RecentPosts";
 import { RecentLectures } from "./_components/RecentLectures";
 import { RecentResources } from "./_components/RecentResources";
+import { RecentVibeStudents } from "./_components/RecentVibeStudents";
 import { SignOutButton } from "./_components/SignOutButton";
 import {getCurrentUser} from "./_actions/auth";
 import {supabaseServerAuth} from "@/app/_lib/supabase-server";
@@ -38,6 +39,12 @@ const actions = [
     label: "알림함",
     desc: "휴대폰에 온 카톡·문자 중 강의 관련 메시지를 실시간으로 모아 봅니다.",
     tone: { a: "#f2b56a", b: "#8f3c12" },
+  },
+  {
+    href: "/admin/vibe-coding",
+    label: "바이브 코딩",
+    desc: "수강생을 사전 등록하고, 본인인증 후 발급된 OpenAI API 키 상태를 관리합니다.",
+    tone: { a: "#f6a55b", b: "#c04310" },
   },
 ];
 
@@ -108,6 +115,17 @@ export default async function AdminHome() {
         </div>
         <div className="mt-8">
           <RecentResources />
+        </div>
+      </div>
+
+      {/* 바이브 코딩 — 수강생 등록/발급 현황 */}
+      <div className="mt-16">
+        <Eyebrow>바이브 코딩</Eyebrow>
+        <h2 className="display mt-5 text-[28px] leading-[1.05] sm:text-[36px]">
+          수강생 등록 · 발급 현황
+        </h2>
+        <div className="mt-8">
+          <RecentVibeStudents />
         </div>
       </div>
     </Section>

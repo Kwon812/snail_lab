@@ -12,6 +12,7 @@ const LINKS = [
   { href: "/lectures", label: "강의" },
   { href: "/blog", label: "블로그" },
   { href: "/resources", label: "자료실" },
+  { href: "/vibe-coding", label: "바이브 코딩" },
 ];
 
 export function Nav() {
