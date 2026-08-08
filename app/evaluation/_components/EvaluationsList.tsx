@@ -61,10 +61,10 @@ export function EvaluationsList({ evaluations }: { evaluations: PublicCourseEval
   const [lecture, setLecture] = useState<string>("전체");
   const [qrTarget, setQrTarget] = useState<PublicCourseEvaluation | null>(null);
   const lectureNames = useMemo(
-    () => ["전체", ...Array.from(new Set(evaluations.map((e) => e.lecture_title).filter(Boolean) as string[]))],
+    () => ["전체", ...Array.from(new Set(evaluations.map((e) => e.lecture_name).filter(Boolean) as string[]))],
     [evaluations],
   );
-  const filtered = lecture === "전체" ? evaluations : evaluations.filter((e) => e.lecture_title === lecture);
+  const filtered = lecture === "전체" ? evaluations : evaluations.filter((e) => e.lecture_name === lecture);
 
   return (
     <Section className="pt-36 sm:pt-44">
@@ -98,7 +98,7 @@ export function EvaluationsList({ evaluations }: { evaluations: PublicCourseEval
                 <div className="min-w-0 flex-1">
                   <p className="text-[17px] font-medium text-ink">{e.title}</p>
                   <p className="mt-1 text-[13px] text-slate">
-                    {e.lecture_title ? `${e.lecture_title} · ` : ""}
+                    {e.lecture_name ? `${e.lecture_name} · ` : ""}
                     {e.description ? `${e.description} · ` : ""}
                     등록 {fmtDate(e.created_at)}
                   </p>

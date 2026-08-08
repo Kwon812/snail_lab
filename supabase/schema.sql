@@ -414,10 +414,14 @@
     --
     --  status는 우리 쪽 목록 노출 여부만 제어한다(PUBLISHED만 /evaluation 공개 페이지에 노출) —
     --  구글 폼 자체의 응답 수집 여부는 건드리지 않는다.
+    --
+    --  lecture_name은 lectures 테이블을 참조하는 FK가 아니라 자유 입력 텍스트다 — 관리자가
+    --  강의 목록에서 골라도 되고(입력창에 자동완성 목록으로 뜸) 등록 안 된 강의명을 직접 타이핑해도
+    --  된다. /evaluation의 강의별 필터도 이 문자열을 그대로 기준으로 묶는다.
     -- ------------------------------------------------------------------
     create table if not exists public.course_evaluations (
       id             uuid primary key default gen_random_uuid(),
-      lecture_id     uuid references public.lectures(id) on delete set null,
+      lecture_name   text,
       title          text not null,
       description    text,
       questions      jsonb not null default '[]',
@@ -429,8 +433,12 @@
       updated_at     timestamptz not null default now()
     );
 
-    create index if not exists course_evaluations_lecture_idx
-      on public.course_evaluations (lecture_id);
+    -- lecture_id(FK) → lecture_name(자유 입력 텍스트)로 교체 — 이미 만든 환경이 있으면 여기서 정리한다.
+    alter table public.course_evaluations drop column if exists lecture_id;
+    alter table public.course_evaluations add column if not exists lecture_name text;
+
+    create index if not exists course_evaluations_lecture_name_idx
+      on public.course_evaluations (lecture_name);
     create index if not exists course_evaluations_status_created_idx
       on public.course_evaluations (status, created_at desc);
 

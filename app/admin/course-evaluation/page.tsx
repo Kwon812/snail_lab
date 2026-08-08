@@ -100,7 +100,7 @@ function CourseEvaluationAdminPageInner() {
   const toggleStatus = useToggleCourseEvaluationStatus();
   const del = useDeleteCourseEvaluation();
 
-  const [lectureId, setLectureId] = useState("");
+  const [lectureName, setLectureName] = useState("");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [questions, setQuestions] = useState<QuestionDraft[]>([newQuestion()]);
@@ -132,7 +132,7 @@ function CourseEvaluationAdminPageInner() {
     }
     try {
       const res = await create.mutateAsync({
-        lectureId: lectureId || null,
+        lectureName: lectureName.trim() || null,
         title,
         description: description || undefined,
         questions: questions.map(toSurveyQuestion),
@@ -140,7 +140,7 @@ function CourseEvaluationAdminPageInner() {
       setResult({ formUrl: res.formUrl, editUrl: res.editUrl });
       setTitle("");
       setDescription("");
-      setLectureId("");
+      setLectureName("");
       setQuestions([newQuestion()]);
     } catch (err) {
       alert(`설문지 생성 실패: ${(err as Error).message}`);
@@ -218,18 +218,20 @@ function CourseEvaluationAdminPageInner() {
       {/* 작성 폼 */}
       <div className="mt-10 rounded-stadium bg-lifted p-6 shadow-card sm:p-8">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <select
-            value={lectureId}
-            onChange={(e) => setLectureId(e.target.value)}
-            className="w-full rounded-[14px] border border-ink/15 bg-white px-4 py-3 text-[16px] text-ink outline-none focus:border-ink/40"
-          >
-            <option value="">강의 선택 안 함(공통 설문)</option>
-            {lectures?.map((l) => (
-              <option key={l.id} value={l.id}>
-                {l.title}
-              </option>
-            ))}
-          </select>
+          <div>
+            <input
+              value={lectureName}
+              onChange={(e) => setLectureName(e.target.value)}
+              list="course-evaluation-lecture-suggestions"
+              placeholder="강의명(선택, 직접 입력 가능 — 예: 미디어 리터러시 심화반)"
+              className="w-full rounded-[14px] border border-ink/15 bg-white px-4 py-3 text-[16px] text-ink outline-none placeholder:text-dust focus:border-ink/40"
+            />
+            <datalist id="course-evaluation-lecture-suggestions">
+              {Array.from(new Set(lectures?.map((l) => l.title) ?? [])).map((t) => (
+                <option key={t} value={t} />
+              ))}
+            </datalist>
+          </div>
           <input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
@@ -394,7 +396,7 @@ function CourseEvaluationAdminPageInner() {
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-[16px] font-medium text-ink">{ev.title}</p>
                     <p className="mt-0.5 truncate text-[13px] text-slate">
-                      {ev.lecture_title ? `${ev.lecture_title} · ` : ""}
+                      {ev.lecture_name ? `${ev.lecture_name} · ` : ""}
                       문항 {ev.questions.length}개 · 생성 {fmtDate(ev.created_at)} ·{" "}
                       <ResponseCountBadge googleFormId={ev.google_form_id} />
                     </p>

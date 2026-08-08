@@ -38,7 +38,7 @@ export async function disconnectGoogle() {
 }
 
 export type CourseEvaluationInput = {
-  lectureId: string | null;
+  lectureName: string | null;
   title: string;
   description?: string;
   questions: SurveyQuestion[];
@@ -46,8 +46,7 @@ export type CourseEvaluationInput = {
 
 export type CourseEvaluationItem = {
   id: string;
-  lecture_id: string | null;
-  lecture_title: string | null;
+  lecture_name: string | null;
   title: string;
   description: string | null;
   questions: SurveyQuestion[];
@@ -89,7 +88,7 @@ export async function createCourseEvaluation(input: CourseEvaluationInput) {
   const { data, error } = await supabase
     .from("course_evaluations")
     .insert({
-      lecture_id: input.lectureId,
+      lecture_name: input.lectureName || null,
       title: input.title,
       description: input.description || null,
       questions: input.questions,
@@ -117,14 +116,13 @@ export async function getCourseEvaluations(): Promise<CourseEvaluationItem[]> {
   const { data, error } = await supabase
     .from("course_evaluations")
     .select(
-      "id, lecture_id, title, description, questions, google_form_id, form_url, edit_url, status, created_at, lectures(title)",
+      "id, lecture_name, title, description, questions, google_form_id, form_url, edit_url, status, created_at",
     )
     .order("created_at", { ascending: false });
   if (error) throw new Error(error.message);
   return (data ?? []).map((row) => ({
     id: row.id,
-    lecture_id: row.lecture_id,
-    lecture_title: (row.lectures as unknown as { title: string } | null)?.title ?? null,
+    lecture_name: row.lecture_name,
     title: row.title,
     description: row.description,
     questions: (row.questions as SurveyQuestion[]) ?? [],
