@@ -7,6 +7,7 @@ import { Spinner } from "../../_components/spinner";
 import { useLectures } from "../../lectures/_hooks/lectures";
 import type { SurveyQuestion, SurveyQuestionType } from "./_actions/evaluations";
 import {
+  useCourseEvaluationResponseCount,
   useCourseEvaluations,
   useCreateCourseEvaluation,
   useDeleteCourseEvaluation,
@@ -67,6 +68,14 @@ function toSurveyQuestion(q: QuestionDraft): SurveyQuestion {
 function fmtDate(iso: string): string {
   const d = new Date(iso);
   return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, "0")}.${String(d.getDate()).padStart(2, "0")}`;
+}
+
+/** 응답 수 배지 — 행마다 독립적으로 구글 API를 호출해 지연 로딩한다(목록 자체는 즉시 뜬다). */
+function ResponseCountBadge({ googleFormId }: { googleFormId: string }) {
+  const { data, isPending, isError } = useCourseEvaluationResponseCount(googleFormId);
+  if (isPending) return <span className="text-[13px] text-dust">응답 확인 중…</span>;
+  if (isError) return <span className="text-[13px] text-dust">응답 수 조회 실패</span>;
+  return <span className="text-[13px] text-slate">응답 {data}명</span>;
 }
 
 export default function CourseEvaluationAdminPage() {
@@ -386,7 +395,8 @@ function CourseEvaluationAdminPageInner() {
                     <p className="truncate text-[16px] font-medium text-ink">{ev.title}</p>
                     <p className="mt-0.5 truncate text-[13px] text-slate">
                       {ev.lecture_title ? `${ev.lecture_title} · ` : ""}
-                      문항 {ev.questions.length}개 · 생성 {fmtDate(ev.created_at)}
+                      문항 {ev.questions.length}개 · 생성 {fmtDate(ev.created_at)} ·{" "}
+                      <ResponseCountBadge googleFormId={ev.google_form_id} />
                     </p>
                   </div>
                   <a
@@ -404,6 +414,12 @@ function CourseEvaluationAdminPageInner() {
                     className="shrink-0 rounded-pill border border-ink/15 bg-white px-3 py-1.5 text-[13px] font-medium text-ink transition-colors hover:border-ink/40"
                   >
                     폼 편집
+                  </a>
+                  <a
+                    href={`/api/admin/course-evaluation/${ev.id}/export`}
+                    className="shrink-0 rounded-pill border border-ink/15 bg-white px-3 py-1.5 text-[13px] font-medium text-ink transition-colors hover:border-ink/40"
+                  >
+                    엑셀로 내보내기
                   </a>
                   <button
                     onClick={() => toggleStatus.mutate(ev)}

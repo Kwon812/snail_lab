@@ -17,8 +17,10 @@ const FORMS_API_BASE = "https://forms.googleapis.com/v1/forms";
 const DRIVE_API_BASE = "https://www.googleapis.com/drive/v3/files";
 
 // forms.body: 폼 생성/수정. drive.file: API로 만든 파일을 이후 삭제(휴지통 이동)하는 데 필요.
+// forms.responses.readonly: 응답 수 표시 + 엑셀 내보내기에 필요.
 export const GOOGLE_OAUTH_SCOPES = [
   "https://www.googleapis.com/auth/forms.body",
+  "https://www.googleapis.com/auth/forms.responses.readonly",
   "https://www.googleapis.com/auth/drive.file",
   "https://www.googleapis.com/auth/userinfo.email",
 ].join(" ");
@@ -238,4 +240,65 @@ export async function trashGoogleForm(accessToken: string, formId: string): Prom
     },
     body: JSON.stringify({ trashed: true }),
   }).catch(() => {});
+}
+
+export type FormQuestionMeta = {
+  questionId: string;
+  title: string;
+};
+
+/** 폼 구조(문항 제목·순서) — 응답을 엑셀로 내보낼 때 열 헤더로 쓴다. */
+export async function getFormQuestions(accessToken: string, formId: string): Promise<FormQuestionMeta[]> {
+  const form = await formsFetch<{
+    items?: { title?: string; questionItem?: { question?: { questionId?: string } } }[];
+  }>(accessToken, `/${formId}`, { method: "GET" });
+
+  return (form.items ?? [])
+    .filter((item) => item.questionItem?.question?.questionId)
+    .map((item) => ({
+      questionId: item.questionItem!.question!.questionId!,
+      title: item.title ?? "",
+    }));
+}
+
+export type FormResponse = {
+  responseId: string;
+  lastSubmittedTime: string;
+  answers: Record<string, string>; // questionId -> 답변(체크박스 등 복수값은 "; "로 합침)
+};
+
+function flattenAnswerValue(answer: {
+  textAnswers?: { answers?: { value?: string }[] };
+}): string {
+  return (answer.textAnswers?.answers ?? []).map((a) => a.value ?? "").join("; ");
+}
+
+/** 폼의 전체 응답 — 페이지네이션을 다 따라가며 모은다. */
+export async function listFormResponses(accessToken: string, formId: string): Promise<FormResponse[]> {
+  const results: FormResponse[] = [];
+  let pageToken: string | undefined;
+
+  do {
+    const params = new URLSearchParams({ pageSize: "200" });
+    if (pageToken) params.set("pageToken", pageToken);
+    const page = await formsFetch<{
+      responses?: {
+        responseId: string;
+        lastSubmittedTime: string;
+        answers?: Record<string, { textAnswers?: { answers?: { value?: string }[] } }>;
+      }[];
+      nextPageToken?: string;
+    }>(accessToken, `/${formId}/responses?${params.toString()}`, { method: "GET" });
+
+    for (const r of page.responses ?? []) {
+      const answers: Record<string, string> = {};
+      for (const [questionId, answer] of Object.entries(r.answers ?? {})) {
+        answers[questionId] = flattenAnswerValue(answer);
+      }
+      results.push({ responseId: r.responseId, lastSubmittedTime: r.lastSubmittedTime, answers });
+    }
+    pageToken = page.nextPageToken;
+  } while (pageToken);
+
+  return results;
 }

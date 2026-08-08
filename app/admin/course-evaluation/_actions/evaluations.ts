@@ -5,6 +5,7 @@ import { supabaseServerAuth } from "../../../_lib/supabase-server";
 import {
   createGoogleForm,
   getAccessTokenFromRefreshToken,
+  listFormResponses,
   trashGoogleForm,
   type SurveyQuestion,
 } from "../../../_lib/google-forms";
@@ -161,4 +162,12 @@ export async function deleteCourseEvaluation(id: string, googleFormId: string) {
   revalidatePath("/admin/course-evaluation");
   revalidatePath("/evaluation");
   return { id };
+}
+
+/** 응답 수 — 목록의 각 행에서 개별 조회한다(구글 폼 API를 직접 호출하므로 지연 로딩). */
+export async function getCourseEvaluationResponseCount(googleFormId: string): Promise<number> {
+  const refreshToken = await requireRefreshToken();
+  const accessToken = await getAccessTokenFromRefreshToken(refreshToken);
+  const responses = await listFormResponses(accessToken, googleFormId);
+  return responses.length;
 }

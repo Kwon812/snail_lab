@@ -5,6 +5,7 @@ import {
   createCourseEvaluation,
   deleteCourseEvaluation,
   disconnectGoogle,
+  getCourseEvaluationResponseCount,
   getCourseEvaluations,
   getGoogleConnection,
   toggleCourseEvaluationStatus,
@@ -53,5 +54,14 @@ export function useDeleteCourseEvaluation() {
   return useMutation({
     mutationFn: (item: CourseEvaluationItem) => deleteCourseEvaluation(item.id, item.google_form_id),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["course-evaluations"] }),
+  });
+}
+
+/** 응답 수 — 행마다 지연 로딩(구글 API 호출이라 목록 전체 로딩을 막지 않도록 분리). */
+export function useCourseEvaluationResponseCount(googleFormId: string) {
+  return useQuery({
+    queryKey: ["course-evaluation-response-count", googleFormId],
+    queryFn: () => getCourseEvaluationResponseCount(googleFormId),
+    staleTime: 30_000,
   });
 }

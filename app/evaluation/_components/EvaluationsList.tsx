@@ -1,7 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import QRCode from "qrcode";
 import { Arrow, Chip, Eyebrow, Section } from "../../_components/ui";
+import { Spinner } from "../../_components/spinner";
 import type { PublicCourseEvaluation } from "../_queries/evaluations";
 
 function fmtDate(iso: string): string {
@@ -9,8 +11,55 @@ function fmtDate(iso: string): string {
   return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, "0")}.${String(d.getDate()).padStart(2, "0")}`;
 }
 
+/** QR은 외부 서비스 없이 브라우저에서 직접 그린다 — 설문 링크를 제3자 서버로 보내지 않는다. */
+function QrModal({ evaluation, onClose }: { evaluation: PublicCourseEvaluation; onClose: () => void }) {
+  const [dataUrl, setDataUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    QRCode.toDataURL(evaluation.form_url, { width: 320, margin: 2 }).then((url) => {
+      if (!cancelled) setDataUrl(url);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [evaluation.form_url]);
+
+  return (
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-ink/40 p-6"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-[380px] rounded-[28px] bg-white p-8 text-center shadow-card"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <p className="text-[16px] font-medium text-ink">{evaluation.title}</p>
+        <p className="mt-1 text-[13px] text-slate">휴대폰 카메라로 QR을 스캔하면 설문으로 이동합니다.</p>
+        <div className="mt-6 flex justify-center">
+          {dataUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={dataUrl} alt={`${evaluation.title} 설문 QR코드`} className="h-[220px] w-[220px]" />
+          ) : (
+            <div className="flex h-[220px] w-[220px] items-center justify-center">
+              <Spinner size={40} />
+            </div>
+          )}
+        </div>
+        <button
+          onClick={onClose}
+          className="mt-6 rounded-pill border border-ink/15 bg-white px-5 py-2 text-[14px] font-medium text-ink transition-colors hover:border-ink/40"
+        >
+          닫기
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function EvaluationsList({ evaluations }: { evaluations: PublicCourseEvaluation[] }) {
   const [lecture, setLecture] = useState<string>("전체");
+  const [qrTarget, setQrTarget] = useState<PublicCourseEvaluation | null>(null);
   const lectureNames = useMemo(
     () => ["전체", ...Array.from(new Set(evaluations.map((e) => e.lecture_title).filter(Boolean) as string[]))],
     [evaluations],
@@ -54,6 +103,12 @@ export function EvaluationsList({ evaluations }: { evaluations: PublicCourseEval
                     등록 {fmtDate(e.created_at)}
                   </p>
                 </div>
+                <button
+                  onClick={() => setQrTarget(e)}
+                  className="inline-flex shrink-0 items-center gap-2 rounded-[20px] border border-ink/15 bg-white px-5 py-2 text-[15px] font-medium text-ink transition-colors hover:border-ink/40"
+                >
+                  QR 보기
+                </button>
                 <a
                   href={e.form_url}
                   target="_blank"
@@ -67,6 +122,8 @@ export function EvaluationsList({ evaluations }: { evaluations: PublicCourseEval
           </ul>
         )}
       </div>
+
+      {qrTarget && <QrModal evaluation={qrTarget} onClose={() => setQrTarget(null)} />}
     </Section>
   );
 }
