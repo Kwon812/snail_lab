@@ -76,18 +76,15 @@ export default async function AdminHome() {
             href={a.href}
             className="group flex flex-col justify-between overflow-hidden rounded-stadium bg-lifted p-8 shadow-card transition-transform hover:-translate-y-1 sm:p-10"
           >
-            <div
-              className="h-32 w-32 rounded-full"
-              style={{ background: `radial-gradient(circle at 35% 30%, ${a.tone.a}, ${a.tone.b})` }}
-            />
-            <div className="mt-10 flex items-end justify-between gap-4">
+
+            <div className=" flex items-end justify-between gap-4">
               <div>
                 <h2 className="display text-[28px] text-ink sm:text-[32px]">{a.label}</h2>
                 <p className="mt-3 max-w-[30ch] text-[15px] leading-[1.5] text-slate">{a.desc}</p>
               </div>
-              <span className="grid h-14 w-14 shrink-0 place-items-center rounded-full bg-ink text-cream transition-transform group-hover:translate-x-1">
+              {/*<div className={'flex flex-col h-full justify-start'}>*/}
                 <Arrow className="h-6 w-6" />
-              </span>
+              {/*</div>*/}
             </div>
           </Link>
         ))}

@@ -8,7 +8,6 @@ import { Arrow } from "./ui";
 import {AdminOnly} from "@/app/_components/admin-gate";
 
 const LINKS = [
-  { href: "/about", label: "소개" },
   { href: "/lectures", label: "강의" },
   { href: "/blog", label: "블로그" },
   { href: "/resources", label: "자료실" },
@@ -45,18 +44,6 @@ export function Nav() {
             </span>
           </Link>
 
-          <AdminOnly>
-            <Link
-              href="/admin"
-              className={`hidden items-center gap-1.5 rounded-pill border px-4 py-1.5 text-[14px] font-medium tracking-[-0.02em] transition-colors lg:inline-flex ${
-                pathname === "/admin" || pathname.startsWith("/admin/")
-                  ? "border-ink bg-ink text-cream"
-                  : "border-ink/15 text-ink hover:border-ink/40"
-              }`}
-            >
-              관리자 페이지
-            </Link>
-          </AdminOnly>
         </div>
 
         {/* Right — links + CTA + mobile toggle */}
@@ -79,6 +66,15 @@ export function Nav() {
             })}
           </div>
 
+          <AdminOnly>
+          <Link
+            href="/admin"
+            className="hidden items-center gap-2 rounded-[20px] bg-ink px-5 py-2 text-[15px] font-medium tracking-[-0.02em] text-cream transition-transform active:scale-95 lg:inline-flex"
+          >
+            관리자
+            <Arrow className="h-4 w-4" />
+          </Link>
+          </AdminOnly>
           <button
             aria-label="메뉴"
             aria-expanded={open}
