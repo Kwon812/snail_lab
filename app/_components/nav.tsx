@@ -23,26 +23,41 @@ export function Nav() {
   return (
     <div className="pointer-events-none fixed inset-x-0 top-6 z-50 px-4 sm:px-8">
       <nav className="pointer-events-auto mx-auto flex w-full max-w-[1180px] items-center justify-between rounded-pill bg-white/90 px-2 py-2 shadow-pill backdrop-blur-md sm:px-6">
-        {/* Brand */}
-        <Link href="/" className="flex items-center gap-2.5" onClick={() => setOpen(false)}>
-          <Image
-            src="/logo-symbol.svg"
-            alt="달팽이 그림책 연구소"
-            width={56}
-            height={56}
-            priority
-            className="-mt-1 h-12 w-12 shrink-0"
-          />
-          <span className="flex flex-col leading-none">
-            <span className="text-[16px] font-medium tracking-[-0.02em] text-ink">
-              달팽이 그림책 연구소
+        {/* Left — brand + admin button */}
+        <div className="flex items-center gap-4">
+          <Link href="/" className="flex items-center gap-2.5" onClick={() => setOpen(false)}>
+            <Image
+              src="/logo-symbol.svg"
+              alt="달팽이 그림책 연구소"
+              width={56}
+              height={56}
+              priority
+              className="-mt-1 h-12 w-12 shrink-0"
+            />
+            <span className="flex flex-col leading-none">
+              <span className="text-[16px] font-medium tracking-[-0.02em] text-ink">
+                달팽이 그림책 연구소
+              </span>
+              <span className="mt-1 flex items-center gap-1 text-[9px] font-bold tracking-[0.18em] text-slate">
+                <span className="h-1 w-1 rounded-full bg-signal" />
+                PICTURE BOOK LAB
+              </span>
             </span>
-            <span className="mt-1 flex items-center gap-1 text-[9px] font-bold tracking-[0.18em] text-slate">
-              <span className="h-1 w-1 rounded-full bg-signal" />
-              PICTURE BOOK LAB
-            </span>
-          </span>
-        </Link>
+          </Link>
+
+          <AdminOnly>
+            <Link
+              href="/admin"
+              className={`hidden items-center gap-1.5 rounded-pill border px-4 py-1.5 text-[14px] font-medium tracking-[-0.02em] transition-colors lg:inline-flex ${
+                pathname === "/admin" || pathname.startsWith("/admin/")
+                  ? "border-ink bg-ink text-cream"
+                  : "border-ink/15 text-ink hover:border-ink/40"
+              }`}
+            >
+              관리자 페이지
+            </Link>
+          </AdminOnly>
+        </div>
 
         {/* Right — links + CTA + mobile toggle */}
         <div className="flex items-center gap-2 lg:gap-8">
@@ -64,26 +79,6 @@ export function Nav() {
             })}
           </div>
 
-          <AdminOnly>
-            <Link
-              href="/admin"
-              className={`hidden items-center gap-1.5 rounded-pill border px-4 py-1.5 text-[14px] font-medium tracking-[-0.02em] transition-colors lg:inline-flex ${
-                pathname === "/admin" || pathname.startsWith("/admin/")
-                  ? "border-ink bg-ink text-cream"
-                  : "border-ink/15 text-ink hover:border-ink/40"
-              }`}
-            >
-              관리자 페이지
-            </Link>
-          </AdminOnly>
-
-          <Link
-            href="/contact"
-            className="hidden items-center gap-2 rounded-[20px] bg-ink px-5 py-2 text-[15px] font-medium tracking-[-0.02em] text-cream transition-transform active:scale-95 lg:inline-flex"
-          >
-            문의하기
-            <Arrow className="h-4 w-4" />
-          </Link>
           <button
             aria-label="메뉴"
             aria-expanded={open}
